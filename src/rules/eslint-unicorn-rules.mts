@@ -59,7 +59,7 @@ export const eslintUnicornRules: EslintUnicornRules = {
   'unicorn/no-abusive-eslint-disable': 'error',
   'unicorn/no-array-callback-reference': 'off',
   'unicorn/no-array-for-each': 'error',
-  'unicorn/no-array-method-this-argument': 'off', // not compatible with my Arr.map utility in ts-data-forge
+  'unicorn/no-array-method-this-argument': 'off', // not compatible with the Arr.map utility in ts-data-forge
   'unicorn/no-array-reduce': 'off',
   'unicorn/no-await-expression-member': 'error',
   'unicorn/no-console-spaces': 'off', // turned off to enable aligning output
