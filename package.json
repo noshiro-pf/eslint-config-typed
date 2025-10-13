@@ -99,7 +99,7 @@
     "typescript-eslint": "8.46.0"
   },
   "devDependencies": {
-    "@octokit/core": "^7.0.3",
+    "@octokit/core": "^7.0.5",
     "@rollup/plugin-replace": "^6.0.2",
     "@rollup/plugin-strip": "^3.0.4",
     "@rollup/plugin-typescript": "^12.1.4",
