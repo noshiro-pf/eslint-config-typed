@@ -155,11 +155,7 @@ npm run lint:fix
 import { defineConfig, eslintConfigForTypeScript } from 'eslint-config-typed';
 
 export default defineConfig([
-    ...eslintConfigForTypeScript({
-        tsconfigRootDir: import.meta.dirname,
-        tsconfigFileName: './tsconfig.json',
-        packageDirs: [import.meta.dirname],
-    }),
+    ...eslintConfigForTypeScript({ /* ... */ }),
     {
         rules: defineKnownRules({
             // ...
@@ -175,11 +171,7 @@ import { eslintConfigForTypeScript } from 'eslint-config-typed';
 
 /** @type {DeepReadonly<import('@typescript-eslint/utils/ts-eslint').FlatConfig[]>} */
 export default [
-    ...eslintConfigForTypeScript({
-        tsconfigRootDir: import.meta.dirname,
-        tsconfigFileName: './tsconfig.json',
-        packageDirs: [import.meta.dirname],
-    }),
+    ...eslintConfigForTypeScript({ /* ... */ }),
     {
         rules: defineKnownRules({
             // ...
@@ -196,18 +188,6 @@ export default [
 - strongly typed options for every plugin rule that ships with `eslint-config-typed`, so you can discover valid properties without leaving your editor;
 - a zero-cost runtime helper—because the object is returned as-is, it blends seamlessly into any flat config block.
 
-### withDefaultOption utility
-
-`withDefaultOption` is a companion helper that highlights rules which ship with option objects. It maps the familiar severity strings to the numeric values ESLint expects: `withDefaultOption('error')` returns `2`, and `withDefaultOption('warn')` returns `1`. Within `defineKnownRules`, rules that provide options require one of these helpers when you want to keep the defaults and only adjust severity. This convention visually distinguishes rules that contain options, reminding users that a rule has configurable options.
-
-`defineKnownRules` also reserves `0` for deprecated rules. The resulting severity matrix looks like this:
-
-| Rule type            | Allowed severity values in `defineKnownRules`                  |
-| :------------------- | :------------------------------------------------------------- |
-| Deprecated rule      | `0`                                                            |
-| Rule without options | `"off"`, `"warn"`, `"error"`                                   |
-| Rule with options    | `"off"`, `1`, `2`, `["warn", <option>]`, `["error", <option>]` |
-
 
 ```ts
 import {
@@ -217,11 +197,47 @@ import {
 } from 'eslint-config-typed';
 
 export default [
-    ...eslintConfigForTypeScript({
-        tsconfigRootDir: thisDir,
-        tsconfigFileName: './tsconfig.json',
-        packageDirs: [thisDir],
-    }),
+    ...eslintConfigForTypeScript({ /* ... */ }),
+    {
+        rules: defineKnownRules({
+            // NG
+            'no-restricted-globalssss': 'error',
+             // ~~~~~~~~~~~~~
+             // ^ Type Error! (typo)
+
+            // NG (options are not valid)
+              'no-unsafe-optional-chaining': [
+                'error',
+                { disallowArithmeticOperatorsssss: true },
+                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                 // ^ Type Error!
+              ],
+        });
+    }
+] satisfies FlatConfig[];
+```
+
+### withDefaultOption utility
+
+`withDefaultOption` is a companion helper that highlights rules which ship with option objects. It maps the familiar severity strings to the numeric values ESLint expects: `withDefaultOption('error')` returns `2`, and `withDefaultOption('warn')` returns `1`. Within `defineKnownRules`, rules that provide options require one of these helpers when you want to keep the defaults and only adjust severity. This convention visually distinguishes rules that contain options, reminding users that a rule has configurable options.
+
+`defineKnownRules` also reserves `0` for deprecated rules. The resulting severity matrix looks like this:
+
+| Rule type            | Allowed severity values in `defineKnownRules`  |
+| :------------------- | :--------------------------------------------- |
+| Deprecated rule      | `0`                                            |
+| Rule without options | `"off" | "warn" | "error"`                     |
+| Rule with options    | `"off" | 1 | 2 | ["warn" | "error", <option>]` |
+
+
+```ts
+import {
+    eslintConfigForTypeScript,
+    type FlatConfig,
+} from 'eslint-config-typed';
+
+export default [
+    ...eslintConfigForTypeScript({ /* ... */ }),
     {
         rules: defineKnownRules({
             // NG
@@ -233,11 +249,11 @@ export default [
             // OK
            'object-shorthand': withDefaultOption('error'), 
 
-// OK (options are set explicitly)
-  'no-unsafe-optional-chaining': [
-    'error',
-    { disallowArithmeticOperators: true },
-  ],
+            // OK (options are set explicitly)
+              'no-unsafe-optional-chaining': [
+                'error',
+                { disallowArithmeticOperators: true },
+              ],
         });
     }
 ] satisfies FlatConfig[];
@@ -279,12 +295,13 @@ import {
     eslintConfigForReact,
     eslintConfigForNodeJs,
     defineKnownRules,
+    type FlatConfig,
 } from 'eslint-config-typed';
 
 const thisDir = import.meta.dirname;
 
-export default defineConfig([
-    { ignores: ['**/dist/**', '**/build/**', '**/.next/**'] },
+export default [
+    { ignores: ['**/dist/**', '**/build/**', '**/.next/**', "public/**"] },
     ...eslintConfigForTypeScript({
         tsconfigRootDir: thisDir,
         tsconfigFileName: './tsconfig.json',
@@ -303,7 +320,7 @@ export default defineConfig([
             'import-x/no-extraneous-dependencies': 'off',
         }),
     },
-]);
+] satisfies FlatConfig[];
 ```
 
 ### Node.js TypeScript Project
@@ -316,7 +333,7 @@ import {
     defineKnownRules,
 } from 'eslint-config-typed';
 
-export default defineConfig([
+export default [
     { ignores: ['**/dist/**', '**/node_modules/**'] },
     ...eslintConfigForTypeScript({
         tsconfigRootDir: import.meta.dirname,
@@ -332,7 +349,7 @@ export default defineConfig([
             'no-process-env': 'off',
         }),
     },
-]);
+] satisfies FlatConfig[];
 ```
 
 ### React + Testing Libraries
@@ -346,7 +363,7 @@ import {
     eslintConfigForTestingLibrary,
 } from 'eslint-config-typed';
 
-export default defineConfig([
+export default [
     { ignores: ['**/dist/**', '**/coverage/**'] },
     ...eslintConfigForTypeScript({
         tsconfigRootDir: import.meta.dirname,
@@ -356,7 +373,7 @@ export default defineConfig([
     ...eslintConfigForReact(),
     eslintConfigForVitest(),
     eslintConfigForTestingLibrary(),
-]);
+] satisfies FlatConfig[];
 ```
 
 ## VS Code Integration
@@ -371,9 +388,9 @@ Add the following to `.vscode/settings.json` for proper ESLint integration:
         }
     ],
     "eslint.experimental.useFlatConfig": true,
-    "editor.codeActionsOnSave": {
-        "source.fixAll.eslint": "explicit"
-    }
+    // "editor.codeActionsOnSave": {
+    //   "source.fixAll.eslint": "explicit"
+    // }
 }
 ```
 
@@ -407,7 +424,7 @@ Add the following to `.vscode/settings.json` for proper ESLint integration:
 
 ### Configuration Functions
 
-These functions return arrays of ESLint flat configurations:
+These functions return (arrays of) ESLint flat configuration(s):
 
 #### Base Configurations
 
@@ -422,7 +439,7 @@ These functions return arrays of ESLint flat configurations:
 
 - **`eslintConfigForReact(options?)`** - React configuration with hooks and JSX rules
     - `eslintConfigForBrowser` is included in this configuration
-- **`eslintConfigForPreact(options?)`** - Preact configuration (lighter React alternative)
+- **`eslintConfigForPreact(options?)`** - Preact (lighter React alternative) configuration
     - `eslintConfigForBrowser` is included in this configuration
 - **`eslintConfigForVitest(options?)`** - Vitest testing framework configuration
 - **`eslintConfigForJest(options?)`** - Jest testing framework configuration
@@ -498,7 +515,7 @@ Example:
 ```js
 import { eslintRules } from 'eslint-config-typed';
 
-export default defineConfig([
+export default [
     // ...
     {
         rules: defineKnownRules({
@@ -518,7 +535,7 @@ export default defineConfig([
             ],
         }),
     },
-]);
+] satisfies FlatConfig[];
 ```
 
 ### Type Definitions
@@ -576,7 +593,7 @@ You can override any rule by adding a configuration object after the preset conf
 ```js
 import { typescriptEslintRules } from 'eslint-config-typed';
 
-export default defineConfig([
+export default [
     ...eslintConfigForTypeScript(options),
     {
         rules: defineKnownRules({
@@ -607,7 +624,7 @@ export default defineConfig([
             ],
         }),
     },
-]);
+] satisfies FlatConfig[];
 ```
 
 ### Use Type-Safe Rule Options
@@ -652,7 +669,7 @@ export default defineConfig([
 Apply different rules to different file patterns:
 
 ```js
-export default defineConfig([
+export default [
     ...eslintConfigForTypeScript(options),
     {
         files: ['**/*.test.ts', '**/*.spec.ts'],
@@ -671,7 +688,7 @@ export default defineConfig([
             'import-x/no-unassigned-import': 'off',
         }),
     },
-]);
+] satisfies FlatConfig[];
 ```
 
 ## Troubleshooting
@@ -699,7 +716,7 @@ export default defineConfig([
 The `packageDirs` option helps ESLint resolve imports correctly in monorepos:
 
 ```js
-export default defineConfig([
+export default [
     ...eslintConfigForTypeScript({
         tsconfigRootDir: thisDir,
         tsconfigFileName: './tsconfig.json',
@@ -708,7 +725,7 @@ export default defineConfig([
             thisDir, // Current package
         ],
     }),
-]);
+] satisfies FlatConfig[];
 ```
 
 #### 3. Performance issues
