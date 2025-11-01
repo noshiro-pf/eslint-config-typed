@@ -49,7 +49,7 @@ A comprehensive ESLint configuration package with strongly-typed rule definition
 
 ## Features
 
-- 🎯 **Type-Safe Configuration**: Fully typed ESLint rules and configurations for better IDE support
+- 🎯 **Type-Safe Configuration**: Fully typed ESLint rules **and options** and configurations for better IDE support
 - 📦 **Pre-configured Setups**: Ready-to-use configurations for TypeScript, React, Preact, and popular testing frameworks
 - 📝 **Comprehensive Type Definitions**: Complete TypeScript types for all ESLint rules and options
 - 🔄 **ESLint Flat Config Support**: Built for the modern ESLint flat configuration system
@@ -173,7 +173,7 @@ This is equivalent to:
 ```js
 import { eslintConfigForTypeScript } from 'eslint-config-typed';
 
-/** @type {import('@typescript-eslint/utils/ts-eslint').FlatConfig[]} */
+/** @type {DeepReadonly<import('@typescript-eslint/utils/ts-eslint').FlatConfig[]>} */
 export default [
     ...eslintConfigForTypeScript({
         tsconfigRootDir: import.meta.dirname,
@@ -190,7 +190,7 @@ export default [
 
 ### defineKnownRules utility
 
-`defineKnownRules` is a helper designed for the `rules` field in ESLint flat configs. It keeps the returned object untouched while giving you type-safe rule names and option inference in editors. When you wrap your overrides with this function you can rely on:
+`defineKnownRules` is a helper designed for the `rules` field in ESLint flat configs. It keeps the returned object untouched while giving you **type-safe rule names and option inference** in editors (like biome.json). When you wrap your overrides with this function you can rely on:
 
 - autocomplete and early feedback for rule identifiers, eliminating typo-prone string literals;
 - strongly typed options for every plugin rule that ships with `eslint-config-typed`, so you can discover valid properties without leaving your editor;
@@ -207,6 +207,66 @@ export default [
 | Deprecated rule      | `0`                                                            |
 | Rule without options | `"off"`, `"warn"`, `"error"`                                   |
 | Rule with options    | `"off"`, `1`, `2`, `["warn", <option>]`, `["error", <option>]` |
+
+
+```ts
+import {
+    eslintConfigForTypeScript,
+    eslintConfigForVitest,
+    type FlatConfig,
+} from 'eslint-config-typed';
+
+export default [
+    ...eslintConfigForTypeScript({
+        tsconfigRootDir: thisDir,
+        tsconfigFileName: './tsconfig.json',
+        packageDirs: [thisDir],
+    }),
+    {
+        rules: defineKnownRules({
+            // NG
+            'no-restricted-globals': 'error',
+             //                      ~~~~~~~
+             //                     ^ Type Error! (because "no-restricted-globals" has options)
+            // NOTE: In addition, some rules, such as "no-restricted-syntax" "and no-restricted-globals", have no effect unless you set the option.
+
+            // OK
+           'object-shorthand': withDefaultOption('error'), 
+
+// OK (options are set explicitly)
+  'no-unsafe-optional-chaining': [
+    'error',
+    { disallowArithmeticOperators: true },
+  ],
+        });
+    }
+] satisfies FlatConfig[];
+```
+
+
+### TypeScript Configuration Files
+
+You can also write your eslint config in `.ts` or `.mts` format, all you need to do is run `npm add -D jiti`.
+
+```ts
+import {
+    eslintConfigForTypeScript,
+    eslintConfigForVitest,
+    type FlatConfig,
+} from 'eslint-config-typed';
+
+export default [
+    ...eslintConfigForTypeScript({
+        tsconfigRootDir: thisDir,
+        tsconfigFileName: './tsconfig.json',
+        packageDirs: [thisDir],
+    }),
+    eslintConfigForVitest(),
+] satisfies FlatConfig[];
+```
+
+For details, see <https://eslint.org/docs/latest/use/configure/configuration-files#typescript-configuration-files>.
+
 
 ## Configuration Examples
 
@@ -316,29 +376,6 @@ Add the following to `.vscode/settings.json` for proper ESLint integration:
     }
 }
 ```
-
-## TypeScript Configuration Files
-
-You can also write your eslint config in `.ts` or `.mts` format, all you need to do is run `npm add -D jiti`.
-
-```ts
-import {
-    eslintConfigForTypeScript,
-    eslintConfigForVitest,
-    type FlatConfig,
-} from 'eslint-config-typed';
-
-export default [
-    ...eslintConfigForTypeScript({
-        tsconfigRootDir: thisDir,
-        tsconfigFileName: './tsconfig.json',
-        packageDirs: [thisDir],
-    }),
-    eslintConfigForVitest(),
-] satisfies FlatConfig[];
-```
-
-For details, see <https://eslint.org/docs/latest/use/configure/configuration-files#typescript-configuration-files>.
 
 ## Included plugins
 
