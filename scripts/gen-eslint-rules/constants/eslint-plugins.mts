@@ -43,7 +43,7 @@ export const eslintPlugins = {
   },
   EslintImportsRules: {
     typeName: 'EslintImportsRules',
-    pluginName: 'eslint-plugin-import',
+    pluginName: 'eslint-plugin-import-x',
     rulePrefix: 'import/',
     outputFileName: 'eslint-import-rules.mts',
   },

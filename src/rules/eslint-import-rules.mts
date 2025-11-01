@@ -51,8 +51,7 @@ export const eslintImportsRules = {
   'import/no-named-as-default': 'error',
   'import/no-named-as-default-member': 'error',
 
-  // prefer @typescript-eslint/no-deprecated
-  // https://github.com/import-js/eslint-plugin-import/issues/1532
+  // prefer @typescript-eslint/no-deprecated (raised in import-js/eslint-plugin-import#1532)
   'import/no-deprecated': 'off',
 
   'import/no-extraneous-dependencies': 'off',
@@ -124,7 +123,12 @@ export const eslintImportsRules = {
   'import/group-exports': 'off',
   'import/dynamic-import-chunkname': withDefaultOption('error'),
   'import/no-empty-named-blocks': 'error',
-  'import/enforce-node-protocol-usage': ['error', 'always'],
+
+  // Covered by unicorn/prefer-node-protocol
+  // 'import/enforce-node-protocol-usage': ['error', 'always'],
+
+  'import/no-rename-default': withDefaultOption('error'),
+  'import/prefer-namespace-import': ['error', { patterns: ['react'] }],
 
   // deprecated rules
   'import/imports-first': 0,

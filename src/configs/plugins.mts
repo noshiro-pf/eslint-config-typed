@@ -13,7 +13,7 @@ import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 // @ts-expect-error no type definition
 import eslintPluginSortDestructureKeys from 'eslint-plugin-sort-destructure-keys';
 
-import eslintPluginImport from 'eslint-plugin-import';
+import eslintPluginImport from 'eslint-plugin-import-x';
 
 import eslintPluginJest from 'eslint-plugin-jest';
 

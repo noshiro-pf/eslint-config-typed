@@ -351,7 +351,7 @@ For details, see <https://eslint.org/docs/latest/use/configure/configuration-fil
 - eslint-plugin-sort-destructure-keys
 - eslint-plugin-security
 - eslint-plugin-promise
-- eslint-plugin-import
+- eslint-plugin-import-x
 - eslint-plugin-strict-dependencies
 - eslint-plugin-tree-shakable (Reimplemented in this repository to support flat config)
 - eslint-plugin-react
@@ -412,7 +412,7 @@ Pre-configured rule sets that can be imported and customized:
 | **`eslintPreferArrowFunctionRules`**       | `eslint-plugin-prefer-arrow-functions` | Arrow function preference rules         |
 | **`eslintPluginSortDestructureKeysRules`** | `eslint-plugin-sort-destructure-keys`  | Object destructuring rules              |
 | **`eslintPromiseRules`**                   | `eslint-plugin-promise`                | Promise handling rules                  |
-| **`eslintImportsRules`**                   | `eslint-plugin-import`                 | Import/export rules                     |
+| **`eslintImportsRules`**                   | `eslint-plugin-import-x`               | Import/export rules                     |
 | **`eslintSecurityRules`**                  | `eslint-plugin-security`               | Security best practices                 |
 | **`eslintTreeShakableRules`**              | `eslint-plugin-tree-shakable`          | Tree-shaking optimization rules         |
 | **`eslintReactRules`**                     | `eslint-plugin-react`                  | React-specific rules                    |
