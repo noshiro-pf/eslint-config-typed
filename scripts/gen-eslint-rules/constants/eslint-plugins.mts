@@ -44,7 +44,7 @@ export const eslintPlugins = {
   EslintImportsRules: {
     typeName: 'EslintImportsRules',
     pluginName: 'eslint-plugin-import-x',
-    rulePrefix: 'import/',
+    rulePrefix: 'import-x/',
     outputFileName: 'eslint-import-rules.mts',
   },
   EslintStrictDependencies: {

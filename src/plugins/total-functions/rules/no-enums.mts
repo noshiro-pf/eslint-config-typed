@@ -1,4 +1,4 @@
-/* eslint-disable import/no-internal-modules */
+ 
 import {
   type RuleListener,
   type RuleModule,

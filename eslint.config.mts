@@ -4,10 +4,13 @@ import {
   eslintConfigForReact,
   eslintConfigForTypeScript,
   eslintConfigForVitest,
-  type FlatConfig,
+  plugins,
+  type ESLintPlugin, type FlatConfig,
 } from 'eslint-config-typed';
 
 const thisDir = import.meta.dirname;
+
+const importPlugin = (plugins as Record<string, ESLintPlugin>)['import-x'] ?? (plugins as Record<string, ESLintPlugin>).import;
 
 export default [
   ...eslintConfigForTypeScript({
@@ -19,8 +22,11 @@ export default [
   eslintConfigForVitest(),
 
   {
+    plugins: {
+      'import-x': importPlugin,
+    },
     rules: defineKnownRules({
-      'import/no-restricted-paths': [
+      'import-x/no-restricted-paths': [
         'error',
         {
           zones: [
@@ -85,13 +91,16 @@ export default [
   eslintConfigForNodeJs(['scripts/**', 'configs/**']),
   {
     files: ['scripts/**', 'configs/**'],
+    plugins: {
+      'import-x': importPlugin,
+    },
     rules: defineKnownRules({
       '@typescript-eslint/explicit-function-return-type': 'off',
       'no-await-in-loop': 'off',
-      'import/no-unassigned-import': 'off',
-      'import/no-internal-modules': 'off',
-      'import/no-default-export': 'off',
-      'import/no-extraneous-dependencies': 'off',
+      'import-x/no-unassigned-import': 'off',
+      'import-x/no-internal-modules': 'off',
+      'import-x/no-default-export': 'off',
+      'import-x/no-extraneous-dependencies': 'off',
     }),
   },
 

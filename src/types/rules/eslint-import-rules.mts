@@ -10,7 +10,7 @@ type SpreadOptionsIfIsArray<
 /**
  * Ensure imports point to a file/module that can be resolved.
  *
- * @link https://github.com/un-ts/eslint-plugin-import-x/blob/v4.16.1/docs/rules/no-unresolved.md
+ * @link https://github.com/un-ts/eslint-plugin-import-x/blob/main/docs/rules/no-unresolved.md
  *
  *  ```md
  *  | key        | value   |
@@ -2442,86 +2442,86 @@ namespace ImportsFirst {
 }
 
 export type EslintImportsRules = {
-  readonly 'import/no-unresolved': NoUnresolved.RuleEntry;
-  readonly 'import/named': Named.RuleEntry;
-  readonly 'import/default': Default.RuleEntry;
-  readonly 'import/namespace': Namespace.RuleEntry;
-  readonly 'import/no-namespace': NoNamespace.RuleEntry;
-  readonly 'import/export': Export.RuleEntry;
-  readonly 'import/no-mutable-exports': NoMutableExports.RuleEntry;
-  readonly 'import/extensions': Extensions.RuleEntry;
-  readonly 'import/no-restricted-paths': NoRestrictedPaths.RuleEntry;
-  readonly 'import/no-internal-modules': NoInternalModules.RuleEntry;
-  readonly 'import/group-exports': GroupExports.RuleEntry;
-  readonly 'import/no-relative-packages': NoRelativePackages.RuleEntry;
-  readonly 'import/no-relative-parent-imports': NoRelativeParentImports.RuleEntry;
-  readonly 'import/consistent-type-specifier-style': ConsistentTypeSpecifierStyle.RuleEntry;
-  readonly 'import/no-self-import': NoSelfImport.RuleEntry;
-  readonly 'import/no-cycle': NoCycle.RuleEntry;
-  readonly 'import/no-named-default': NoNamedDefault.RuleEntry;
-  readonly 'import/no-named-as-default': NoNamedAsDefault.RuleEntry;
-  readonly 'import/no-named-as-default-member': NoNamedAsDefaultMember.RuleEntry;
-  readonly 'import/no-anonymous-default-export': NoAnonymousDefaultExport.RuleEntry;
-  readonly 'import/no-rename-default': NoRenameDefault.RuleEntry;
-  readonly 'import/no-unused-modules': NoUnusedModules.RuleEntry;
-  readonly 'import/no-commonjs': NoCommonjs.RuleEntry;
-  readonly 'import/no-amd': NoAmd.RuleEntry;
-  readonly 'import/no-duplicates': NoDuplicates.RuleEntry;
-  readonly 'import/first': First.RuleEntry;
-  readonly 'import/max-dependencies': MaxDependencies.RuleEntry;
-  readonly 'import/no-extraneous-dependencies': NoExtraneousDependencies.RuleEntry;
-  readonly 'import/no-absolute-path': NoAbsolutePath.RuleEntry;
-  readonly 'import/no-nodejs-modules': NoNodejsModules.RuleEntry;
-  readonly 'import/no-webpack-loader-syntax': NoWebpackLoaderSyntax.RuleEntry;
-  readonly 'import/order': Order.RuleEntry;
-  readonly 'import/newline-after-import': NewlineAfterImport.RuleEntry;
-  readonly 'import/prefer-default-export': PreferDefaultExport.RuleEntry;
-  readonly 'import/prefer-namespace-import': PreferNamespaceImport.RuleEntry;
-  readonly 'import/no-default-export': NoDefaultExport.RuleEntry;
-  readonly 'import/no-named-export': NoNamedExport.RuleEntry;
-  readonly 'import/no-dynamic-require': NoDynamicRequire.RuleEntry;
-  readonly 'import/unambiguous': Unambiguous.RuleEntry;
-  readonly 'import/no-unassigned-import': NoUnassignedImport.RuleEntry;
-  readonly 'import/no-useless-path-segments': NoUselessPathSegments.RuleEntry;
-  readonly 'import/dynamic-import-chunkname': DynamicImportChunkname.RuleEntry;
-  readonly 'import/no-import-module-exports': NoImportModuleExports.RuleEntry;
-  readonly 'import/no-empty-named-blocks': NoEmptyNamedBlocks.RuleEntry;
-  readonly 'import/exports-last': ExportsLast.RuleEntry;
-  readonly 'import/no-deprecated': NoDeprecated.RuleEntry;
+  readonly 'import-x/no-unresolved': NoUnresolved.RuleEntry;
+  readonly 'import-x/named': Named.RuleEntry;
+  readonly 'import-x/default': Default.RuleEntry;
+  readonly 'import-x/namespace': Namespace.RuleEntry;
+  readonly 'import-x/no-namespace': NoNamespace.RuleEntry;
+  readonly 'import-x/export': Export.RuleEntry;
+  readonly 'import-x/no-mutable-exports': NoMutableExports.RuleEntry;
+  readonly 'import-x/extensions': Extensions.RuleEntry;
+  readonly 'import-x/no-restricted-paths': NoRestrictedPaths.RuleEntry;
+  readonly 'import-x/no-internal-modules': NoInternalModules.RuleEntry;
+  readonly 'import-x/group-exports': GroupExports.RuleEntry;
+  readonly 'import-x/no-relative-packages': NoRelativePackages.RuleEntry;
+  readonly 'import-x/no-relative-parent-imports': NoRelativeParentImports.RuleEntry;
+  readonly 'import-x/consistent-type-specifier-style': ConsistentTypeSpecifierStyle.RuleEntry;
+  readonly 'import-x/no-self-import': NoSelfImport.RuleEntry;
+  readonly 'import-x/no-cycle': NoCycle.RuleEntry;
+  readonly 'import-x/no-named-default': NoNamedDefault.RuleEntry;
+  readonly 'import-x/no-named-as-default': NoNamedAsDefault.RuleEntry;
+  readonly 'import-x/no-named-as-default-member': NoNamedAsDefaultMember.RuleEntry;
+  readonly 'import-x/no-anonymous-default-export': NoAnonymousDefaultExport.RuleEntry;
+  readonly 'import-x/no-rename-default': NoRenameDefault.RuleEntry;
+  readonly 'import-x/no-unused-modules': NoUnusedModules.RuleEntry;
+  readonly 'import-x/no-commonjs': NoCommonjs.RuleEntry;
+  readonly 'import-x/no-amd': NoAmd.RuleEntry;
+  readonly 'import-x/no-duplicates': NoDuplicates.RuleEntry;
+  readonly 'import-x/first': First.RuleEntry;
+  readonly 'import-x/max-dependencies': MaxDependencies.RuleEntry;
+  readonly 'import-x/no-extraneous-dependencies': NoExtraneousDependencies.RuleEntry;
+  readonly 'import-x/no-absolute-path': NoAbsolutePath.RuleEntry;
+  readonly 'import-x/no-nodejs-modules': NoNodejsModules.RuleEntry;
+  readonly 'import-x/no-webpack-loader-syntax': NoWebpackLoaderSyntax.RuleEntry;
+  readonly 'import-x/order': Order.RuleEntry;
+  readonly 'import-x/newline-after-import': NewlineAfterImport.RuleEntry;
+  readonly 'import-x/prefer-default-export': PreferDefaultExport.RuleEntry;
+  readonly 'import-x/prefer-namespace-import': PreferNamespaceImport.RuleEntry;
+  readonly 'import-x/no-default-export': NoDefaultExport.RuleEntry;
+  readonly 'import-x/no-named-export': NoNamedExport.RuleEntry;
+  readonly 'import-x/no-dynamic-require': NoDynamicRequire.RuleEntry;
+  readonly 'import-x/unambiguous': Unambiguous.RuleEntry;
+  readonly 'import-x/no-unassigned-import': NoUnassignedImport.RuleEntry;
+  readonly 'import-x/no-useless-path-segments': NoUselessPathSegments.RuleEntry;
+  readonly 'import-x/dynamic-import-chunkname': DynamicImportChunkname.RuleEntry;
+  readonly 'import-x/no-import-module-exports': NoImportModuleExports.RuleEntry;
+  readonly 'import-x/no-empty-named-blocks': NoEmptyNamedBlocks.RuleEntry;
+  readonly 'import-x/exports-last': ExportsLast.RuleEntry;
+  readonly 'import-x/no-deprecated': NoDeprecated.RuleEntry;
 
   // deprecated
-  readonly 'import/imports-first': ImportsFirst.RuleEntry;
+  readonly 'import-x/imports-first': ImportsFirst.RuleEntry;
 };
 
 export type EslintImportsRulesOption = {
-  readonly 'import/no-unresolved': NoUnresolved.Options;
-  readonly 'import/named': Named.Options;
-  readonly 'import/namespace': Namespace.Options;
-  readonly 'import/no-namespace': NoNamespace.Options;
-  readonly 'import/extensions': Extensions.Options;
-  readonly 'import/no-restricted-paths': NoRestrictedPaths.Options;
-  readonly 'import/no-internal-modules': NoInternalModules.Options;
-  readonly 'import/no-relative-packages': NoRelativePackages.Options;
-  readonly 'import/no-relative-parent-imports': NoRelativeParentImports.Options;
-  readonly 'import/consistent-type-specifier-style': ConsistentTypeSpecifierStyle.Options;
-  readonly 'import/no-cycle': NoCycle.Options;
-  readonly 'import/no-anonymous-default-export': NoAnonymousDefaultExport.Options;
-  readonly 'import/no-rename-default': NoRenameDefault.Options;
-  readonly 'import/no-unused-modules': NoUnusedModules.Options;
-  readonly 'import/no-commonjs': NoCommonjs.Options;
-  readonly 'import/no-duplicates': NoDuplicates.Options;
-  readonly 'import/first': First.Options;
-  readonly 'import/max-dependencies': MaxDependencies.Options;
-  readonly 'import/no-extraneous-dependencies': NoExtraneousDependencies.Options;
-  readonly 'import/no-absolute-path': NoAbsolutePath.Options;
-  readonly 'import/no-nodejs-modules': NoNodejsModules.Options;
-  readonly 'import/order': Order.Options;
-  readonly 'import/newline-after-import': NewlineAfterImport.Options;
-  readonly 'import/prefer-default-export': PreferDefaultExport.Options;
-  readonly 'import/prefer-namespace-import': PreferNamespaceImport.Options;
-  readonly 'import/no-dynamic-require': NoDynamicRequire.Options;
-  readonly 'import/no-unassigned-import': NoUnassignedImport.Options;
-  readonly 'import/no-useless-path-segments': NoUselessPathSegments.Options;
-  readonly 'import/dynamic-import-chunkname': DynamicImportChunkname.Options;
-  readonly 'import/no-import-module-exports': NoImportModuleExports.Options;
+  readonly 'import-x/no-unresolved': NoUnresolved.Options;
+  readonly 'import-x/named': Named.Options;
+  readonly 'import-x/namespace': Namespace.Options;
+  readonly 'import-x/no-namespace': NoNamespace.Options;
+  readonly 'import-x/extensions': Extensions.Options;
+  readonly 'import-x/no-restricted-paths': NoRestrictedPaths.Options;
+  readonly 'import-x/no-internal-modules': NoInternalModules.Options;
+  readonly 'import-x/no-relative-packages': NoRelativePackages.Options;
+  readonly 'import-x/no-relative-parent-imports': NoRelativeParentImports.Options;
+  readonly 'import-x/consistent-type-specifier-style': ConsistentTypeSpecifierStyle.Options;
+  readonly 'import-x/no-cycle': NoCycle.Options;
+  readonly 'import-x/no-anonymous-default-export': NoAnonymousDefaultExport.Options;
+  readonly 'import-x/no-rename-default': NoRenameDefault.Options;
+  readonly 'import-x/no-unused-modules': NoUnusedModules.Options;
+  readonly 'import-x/no-commonjs': NoCommonjs.Options;
+  readonly 'import-x/no-duplicates': NoDuplicates.Options;
+  readonly 'import-x/first': First.Options;
+  readonly 'import-x/max-dependencies': MaxDependencies.Options;
+  readonly 'import-x/no-extraneous-dependencies': NoExtraneousDependencies.Options;
+  readonly 'import-x/no-absolute-path': NoAbsolutePath.Options;
+  readonly 'import-x/no-nodejs-modules': NoNodejsModules.Options;
+  readonly 'import-x/order': Order.Options;
+  readonly 'import-x/newline-after-import': NewlineAfterImport.Options;
+  readonly 'import-x/prefer-default-export': PreferDefaultExport.Options;
+  readonly 'import-x/prefer-namespace-import': PreferNamespaceImport.Options;
+  readonly 'import-x/no-dynamic-require': NoDynamicRequire.Options;
+  readonly 'import-x/no-unassigned-import': NoUnassignedImport.Options;
+  readonly 'import-x/no-useless-path-segments': NoUselessPathSegments.Options;
+  readonly 'import-x/dynamic-import-chunkname': DynamicImportChunkname.Options;
+  readonly 'import-x/no-import-module-exports': NoImportModuleExports.Options;
 };

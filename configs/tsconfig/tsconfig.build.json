@@ -11,6 +11,8 @@
     "noEmitOnError": true,
 
     // Projects
-    "incremental": false
+    "incremental": false,
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
   }
 }

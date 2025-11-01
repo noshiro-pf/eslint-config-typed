@@ -63,6 +63,7 @@ export const plugins: Record<
   | 'playwright'
   | 'functional'
   | 'import'
+  | 'import-x'
   | 'jest'
   | 'vitest'
   | 'jsx-a11y'
@@ -93,6 +94,7 @@ export const plugins: Record<
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   'sort-destructure-keys': eslintPluginSortDestructureKeys,
   import: eslintPluginImport,
+  'import-x': eslintPluginImport,
   jest: eslintPluginJest,
   vitest: eslintPluginVitest,
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
