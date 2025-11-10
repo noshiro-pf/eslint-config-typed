@@ -100,7 +100,7 @@
     "micromatch": "^4.0.8",
     "ts-data-forge": "^3.3.1",
     "tsutils": "3.21.0",
-    "typescript-eslint": "8.46.2"
+    "typescript-eslint": "8.46.4"
   },
   "devDependencies": {
     "@eslint/core": "^0.17.0",
