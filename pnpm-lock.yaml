@@ -235,8 +235,8 @@ importers:
         specifier: ^25.0.1
         version: 25.0.1(typescript@5.9.3)
       ts-fortress:
-        specifier: ^5.2.0
-        version: 5.2.0(typescript@5.9.3)
+        specifier: ^5.3.0
+        version: 5.3.0(typescript@5.9.3)
       ts-repo-utils:
         specifier: ^7.8.0
         version: 7.8.0(prettier@3.6.2)(typescript@5.9.3)
@@ -3884,8 +3884,8 @@ packages:
     peerDependencies:
       typescript: '>=4.0.0'
 
-  ts-fortress@5.2.0:
-    resolution: {integrity: sha512-OXcfAigfWDayC6+zPh8xYy0sTaYCg9SmwnSNY1SV7l2ga2NrTHOBzNNtLPyDgZVARiu9MozQiRBhdJhp2ErkmA==}
+  ts-fortress@5.3.0:
+    resolution: {integrity: sha512-DZcL7nTtfOTW6RWUcUmaMJo9CKwz0DEzINp/lD90zNJgTNrIGZnQ42vjs59xdJTCcIRTVgkJIJd7MP0Vnaae4A==}
 
   ts-repo-utils@7.8.0:
     resolution: {integrity: sha512-hPXLo97p9xvOh34838nt2QRV9v3nKOzn8GTDNHqWcNf+U4ngPsBOkGqfiuAMOdf5DDloFW8HzeF1lE69UCGW6w==}
@@ -7512,7 +7512,7 @@ snapshots:
       '@octokit/openapi-types': 27.0.0
       '@octokit/types': 16.0.0
       ts-data-forge: 3.3.1(typescript@5.9.3)
-      ts-fortress: 5.2.0(typescript@5.9.3)
+      ts-fortress: 5.3.0(typescript@5.9.3)
     transitivePeerDependencies:
       - typescript
 
@@ -8204,7 +8204,7 @@ snapshots:
       picomatch: 4.0.3
       typescript: 5.9.3
 
-  ts-fortress@5.2.0(typescript@5.9.3):
+  ts-fortress@5.3.0(typescript@5.9.3):
     dependencies:
       ts-data-forge: 3.3.1(typescript@5.9.3)
       ts-type-forge: 2.3.0
