@@ -7386,6 +7386,23 @@ namespace NoUnusedExpressions {
 }
 
 /**
+ * Disallow unused private class members
+ *
+ * @link https://typescript-eslint.io/rules/no-unused-private-class-members
+ *
+ *  ```md
+ *  | key                  | value   |
+ *  | :------------------- | :------ |
+ *  | type                 | problem |
+ *  | deprecated           | false   |
+ *  | requiresTypeChecking | false   |
+ *  ```
+ */
+namespace NoUnusedPrivateClassMembers {
+  export type RuleEntry = Linter.StringSeverity;
+}
+
+/**
  * Disallow unused variables
  *
  * @link https://typescript-eslint.io/rules/no-unused-vars
@@ -10042,6 +10059,7 @@ export type TypeScriptEslintRules = {
   readonly '@typescript-eslint/no-unsafe-type-assertion': NoUnsafeTypeAssertion.RuleEntry;
   readonly '@typescript-eslint/no-unsafe-unary-minus': NoUnsafeUnaryMinus.RuleEntry;
   readonly '@typescript-eslint/no-unused-expressions': NoUnusedExpressions.RuleEntry;
+  readonly '@typescript-eslint/no-unused-private-class-members': NoUnusedPrivateClassMembers.RuleEntry;
   readonly '@typescript-eslint/no-unused-vars': NoUnusedVars.RuleEntry;
   readonly '@typescript-eslint/no-use-before-define': NoUseBeforeDefine.RuleEntry;
   readonly '@typescript-eslint/no-useless-constructor': NoUselessConstructor.RuleEntry;

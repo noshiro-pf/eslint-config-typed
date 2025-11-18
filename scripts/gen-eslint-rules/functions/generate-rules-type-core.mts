@@ -181,13 +181,14 @@ const createResult = async (
         mut_resultToWrite.push(...rawSchemaToString(rawSchema));
       }
 
-      mut_resultToWrite.push('  export type RuleEntry = 0;');
+      mut_resultToWrite.push('  export type RuleEntry = 0;', '');
     } else {
       switch (schema.length) {
         case 0:
           mut_resultToWrite.push(
             '',
             `  export type RuleEntry = ${RuleSeverityForNoOption};`,
+            '',
           );
 
           break;
@@ -212,6 +213,7 @@ const createResult = async (
           });
 
           mut_resultToWrite.push(
+            '',
             optionsType,
             '',
             '  export type RuleEntry = ',
@@ -219,13 +221,14 @@ const createResult = async (
               ? `"off" | ${RuleSeverityWithDefaultOption}`
               : 'Linter.StringSeverity',
             `   | SpreadOptionsIfIsArray<readonly [${RuleSeverityForNoOption}, Options]>;`,
+            '',
           );
 
           break;
         }
 
         default: {
-          mut_resultToWrite.push(...rawSchemaToString(rawSchema));
+          mut_resultToWrite.push('', ...rawSchemaToString(rawSchema), '');
 
           /* e.g. "export type Options = { ... };" */
           const optionsTypeList: readonly string[] = await Promise.all(
@@ -242,6 +245,7 @@ const createResult = async (
             optionsTypeList.map((_, index) => `Options${index}` as const);
 
           mut_resultToWrite.push(
+            '',
             ...optionsTypeList,
             '',
             '  export type RuleEntry = ',
@@ -254,6 +258,7 @@ const createResult = async (
                   RuleSeverityForNoOption
                 }, ${OptionsStrs.slice(0, i + 1).join(', ')}]`,
             ),
+            '',
           );
 
           break;
@@ -261,7 +266,7 @@ const createResult = async (
       }
     }
 
-    mut_resultToWrite.push('}', '\n');
+    mut_resultToWrite.push('}', '\n', '\n');
   }
 
   const deprecatedSchemaList = schemaList.filter((s) =>
