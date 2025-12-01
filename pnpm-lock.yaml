@@ -69,8 +69,8 @@ importers:
         specifier: ^17.23.1
         version: 17.23.1(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
       eslint-plugin-playwright:
-        specifier: 2.3.0
-        version: 2.3.0(eslint@9.39.1(jiti@2.6.1))
+        specifier: 2.4.0
+        version: 2.4.0(eslint@9.39.1(jiti@2.6.1))
       eslint-plugin-prefer-arrow-functions:
         specifier: 3.9.1
         version: 3.9.1(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
@@ -2310,8 +2310,8 @@ packages:
     peerDependencies:
       eslint: '>=8.23.0'
 
-  eslint-plugin-playwright@2.3.0:
-    resolution: {integrity: sha512-7UeUuIb5SZrNkrUGb2F+iwHM97kn33/huajcVtAaQFCSMUYGNFvjzRPil5C0OIppslPfuOV68M/zsisXx+/ZvQ==}
+  eslint-plugin-playwright@2.4.0:
+    resolution: {integrity: sha512-MWNXfXlLfwXAjj4Z80PvCCFCXgCYy5OCHan57Z/beGrjkJ3maG1GanuGX8Ck6T6fagplBx2ZdkifxSfByftaTQ==}
     engines: {node: '>=16.9.0'}
     peerDependencies:
       eslint: '>=8.40.0'
@@ -6708,7 +6708,7 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  eslint-plugin-playwright@2.3.0(eslint@9.39.1(jiti@2.6.1)):
+  eslint-plugin-playwright@2.4.0(eslint@9.39.1(jiti@2.6.1)):
     dependencies:
       eslint: 9.39.1(jiti@2.6.1)
       globals: 16.5.0
