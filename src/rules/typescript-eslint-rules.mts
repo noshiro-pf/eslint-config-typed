@@ -491,7 +491,10 @@ export const typescriptEslintRules = {
   '@typescript-eslint/no-unused-private-class-members': 'error',
   '@typescript-eslint/no-useless-default-assignment':
     withDefaultOption('error'),
-  '@typescript-eslint/strict-void-return': ['error', { allowReturnAny: false }],
+
+  // This rule prohibits assigning a function of type () => boolean to type () => void,
+  // but this rule causes unnecessary errors in code that passes the state update function as is, so I turned it off.
+  '@typescript-eslint/strict-void-return': 'off', // ['error', { allowReturnAny: false }],
 
   // For browser environment only
 
