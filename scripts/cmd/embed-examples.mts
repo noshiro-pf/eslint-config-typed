@@ -13,7 +13,7 @@ const codeBlockEnd = '```';
  * `ts`, `tsx`, or `js`. The `(?=\s|$)` lookahead requires the tag to be followed
  * by whitespace or end-of-line, so fences such as ```jsx, ```typescript, or
  * ```ts-ignore are not matched. Only the fence prefix (backticks + tag) is
- * captured; any trailing info string is not part of the match.
+ * matched; any trailing info string is not part of the match.
  */
 const codeBlockStartRegex = /^```(?:tsx|ts|js)(?=\s|$)/mu;
 
@@ -23,7 +23,7 @@ const codeBlockStartRegex = /^```(?:tsx|ts|js)(?=\s|$)/mu;
  */
 const codeBlockStartRegexGlobal = new RegExp(
   codeBlockStartRegex,
-  `${codeBlockStartRegex.flags}g`,
+  `${codeBlockStartRegex.flags.replace('g', '')}g`,
 );
 
 const documents: DeepReadonly<
