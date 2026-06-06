@@ -11,8 +11,8 @@ const codeBlockEnd = '```';
 /**
  * Matches the start of an opening code fence whose language tag is exactly
  * `ts`, `tsx`, or `js`. The `(?=\s|$)` lookahead requires the tag to be followed
- * by whitespace or end-of-line, so fences such as ```jsx, ```typescript, or
- * ```ts-ignore are not matched. Only the fence prefix (backticks + tag) is
+ * by whitespace or end-of-line, so tags like `jsx`, `typescript`, or
+ * `ts-ignore` are not matched. Only the fence prefix (backticks + tag) is
  * matched; any trailing info string is not part of the match.
  */
 const codeBlockStartRegex = /^```(?:tsx|ts|js)(?=\s|$)/mu;
