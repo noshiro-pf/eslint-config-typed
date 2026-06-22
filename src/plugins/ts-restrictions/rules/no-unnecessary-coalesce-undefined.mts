@@ -10,35 +10,15 @@ type Options = readonly [];
 type MessageIds = 'unnecessaryCoalesceUndefined';
 
 /**
- * Returns `true` if the given type can be `null` (i.e. it is `null`, a union
- * that contains `null`, or a permissive type such as `any` / `unknown`).
- *
- * `any` and `unknown` are treated as nullable so that the rule stays
- * conservative and never removes a `?? undefined` whose left-hand side might be
- * `null` at runtime. A type parameter is reduced to its constraint, and an
- * unconstrained type parameter is treated as nullable because it can be
- * instantiated with `null`.
+ * Deferred (non-concrete) type flags whose actual members are only known once
+ * the type is instantiated. They are reduced to their base constraint before
+ * checking for `null`, and treated as nullable when no constraint resolves.
  */
-// eslint-disable-next-line @typescript-eslint/prefer-readonly-parameter-types
-const typeIncludesNull = (type: ts.Type): boolean => {
-  if ((type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown)) !== 0) {
-    return true;
-  }
-
-  if (type.isUnion()) {
-    return type.types.some(typeIncludesNull);
-  }
-
-  if ((type.flags & ts.TypeFlags.TypeParameter) !== 0) {
-    const constraint = type.getConstraint();
-
-    // An unconstrained type parameter (or one whose constraint itself permits
-    // `null`) could be instantiated with `null`, so treat it as nullable.
-    return constraint === undefined || typeIncludesNull(constraint);
-  }
-
-  return (type.flags & ts.TypeFlags.Null) !== 0;
-};
+const DEFERRED_TYPE_FLAGS =
+  ts.TypeFlags.TypeParameter |
+  ts.TypeFlags.IndexedAccess |
+  ts.TypeFlags.Conditional |
+  ts.TypeFlags.Substitution;
 
 /**
  * Returns `true` if the given type is the `undefined` type. Used to confirm
@@ -70,7 +50,45 @@ export const noUnnecessaryCoalesceUndefined: TSESLint.RuleModule<
   create: (context) => {
     const parserServices = ESLintUtils.getParserServices(context);
 
+    const compilerOptions = parserServices.program.getCompilerOptions();
+
+    // Without `strictNullChecks`, `null` / `undefined` are erased from the type
+    // system, so the analysis below cannot tell whether the left-hand side can
+    // be `null`. Removing `?? undefined` would then be unsound, so disable the
+    // rule entirely (matching typescript-eslint's type-aware nullish rules).
+    const strictNullChecks =
+      compilerOptions.strictNullChecks ?? compilerOptions.strict ?? false;
+
+    if (!strictNullChecks) return {};
+
     const checker = parserServices.program.getTypeChecker();
+
+    /**
+     * Returns `true` if the given type can be `null` (it is `null`, a union
+     * containing `null`, or a permissive type such as `any` / `unknown`).
+     *
+     * A deferred type (type parameter, indexed access, conditional, …) is
+     * reduced to its base constraint; one with no resolvable constraint is
+     * treated as nullable because it could be instantiated with `null`.
+     */
+    // eslint-disable-next-line @typescript-eslint/prefer-readonly-parameter-types
+    const typeIncludesNull = (type: ts.Type): boolean => {
+      if ((type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown)) !== 0) {
+        return true;
+      }
+
+      if (type.isUnion()) {
+        return type.types.some(typeIncludesNull);
+      }
+
+      if ((type.flags & DEFERRED_TYPE_FLAGS) !== 0) {
+        const constraint = checker.getBaseConstraintOfType(type);
+
+        return constraint === undefined || typeIncludesNull(constraint);
+      }
+
+      return (type.flags & ts.TypeFlags.Null) !== 0;
+    };
 
     return {
       LogicalExpression: (node) => {

@@ -85,6 +85,12 @@ describe('no-unnecessary-coalesce-undefined', () => {
           `,
         },
         {
+          name: 'indexed access type could be instantiated with null',
+          code: dedent`
+            const f = <T, K extends keyof T>(o: T, k: K) => o[k] ?? undefined;
+          `,
+        },
+        {
           name: 'shadowed undefined is not the undefined value',
           code: dedent`
             const undefined = 123;
