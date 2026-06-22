@@ -15,7 +15,9 @@ type MessageIds = 'unnecessaryCoalesceUndefined';
  *
  * `any` and `unknown` are treated as nullable so that the rule stays
  * conservative and never removes a `?? undefined` whose left-hand side might be
- * `null` at runtime.
+ * `null` at runtime. A type parameter is reduced to its constraint, and an
+ * unconstrained type parameter is treated as nullable because it can be
+ * instantiated with `null`.
  */
 // eslint-disable-next-line @typescript-eslint/prefer-readonly-parameter-types
 const typeIncludesNull = (type: ts.Type): boolean => {
@@ -27,8 +29,25 @@ const typeIncludesNull = (type: ts.Type): boolean => {
     return type.types.some(typeIncludesNull);
   }
 
+  if ((type.flags & ts.TypeFlags.TypeParameter) !== 0) {
+    const constraint = type.getConstraint();
+
+    // An unconstrained type parameter (or one whose constraint itself permits
+    // `null`) could be instantiated with `null`, so treat it as nullable.
+    return constraint === undefined || typeIncludesNull(constraint);
+  }
+
   return (type.flags & ts.TypeFlags.Null) !== 0;
 };
+
+/**
+ * Returns `true` if the given type is the `undefined` type. Used to confirm
+ * that the right-hand side of `?? undefined` is really the `undefined` value
+ * and not a shadowed binding (e.g. `const undefined = 123`).
+ */
+// eslint-disable-next-line @typescript-eslint/prefer-readonly-parameter-types
+const isUndefinedType = (type: ts.Type): boolean =>
+  !type.isUnion() && (type.flags & ts.TypeFlags.Undefined) !== 0;
 
 export const noUnnecessaryCoalesceUndefined: TSESLint.RuleModule<
   MessageIds,
@@ -64,6 +83,15 @@ export const noUnnecessaryCoalesceUndefined: TSESLint.RuleModule<
         ) {
           return;
         }
+
+        // Confirm the right-hand side really is the `undefined` value and not a
+        // shadowed binding (e.g. `const undefined = 123`), in which case
+        // `x ?? undefined` is not equivalent to `x`.
+        const rightTsNode = parserServices.esTreeNodeToTSNodeMap.get(
+          node.right,
+        );
+
+        if (!isUndefinedType(checker.getTypeAtLocation(rightTsNode))) return;
 
         const leftTsNode = parserServices.esTreeNodeToTSNodeMap.get(node.left);
 

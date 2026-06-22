@@ -72,6 +72,26 @@ describe('no-unnecessary-coalesce-undefined', () => {
             const y = x || undefined;
           `,
         },
+        {
+          name: 'unconstrained type parameter could be instantiated with null',
+          code: dedent`
+            const f = <T>(x: T) => x ?? undefined;
+          `,
+        },
+        {
+          name: 'type parameter whose constraint includes null',
+          code: dedent`
+            const f = <T extends string | null>(x: T) => x ?? undefined;
+          `,
+        },
+        {
+          name: 'shadowed undefined is not the undefined value',
+          code: dedent`
+            const undefined = 123;
+            declare const x: number;
+            const y = x ?? undefined;
+          `,
+        },
       ],
       invalid: [
         {
@@ -119,6 +139,16 @@ describe('no-unnecessary-coalesce-undefined', () => {
           output: dedent`
             declare const obj: { value?: number };
             const y = obj.value;
+          `,
+          errors: [{ messageId: 'unnecessaryCoalesceUndefined' }],
+        },
+        {
+          name: 'type parameter constrained to a non-nullable type',
+          code: dedent`
+            const f = <T extends string>(x: T) => x ?? undefined;
+          `,
+          output: dedent`
+            const f = <T extends string>(x: T) => x;
           `,
           errors: [{ messageId: 'unnecessaryCoalesceUndefined' }],
         },
