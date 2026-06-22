@@ -45,8 +45,8 @@ importers:
         specifier: ^6.4.1
         version: 6.4.1(@typescript-eslint/parser@8.59.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.4(jiti@2.6.1))
       eslint-plugin-eslint-plugin:
-        specifier: ^7.3.2
-        version: 7.3.2(eslint@9.39.4(jiti@2.6.1))
+        specifier: ^7.4.0
+        version: 7.4.0(eslint@9.39.4(jiti@2.6.1))
       eslint-plugin-functional:
         specifier: ^9.0.4
         version: 9.0.4(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
@@ -2306,8 +2306,8 @@ packages:
     peerDependencies:
       eslint: '>=8'
 
-  eslint-plugin-eslint-plugin@7.3.2:
-    resolution: {integrity: sha512-odUwjaeon0s3W96vAmZf13XbTEGKnnXStnRykwM3XysTce7ZI7C8AJRn47OFJMdDNVtG/jLb/gFk0Wvj9zkSbQ==}
+  eslint-plugin-eslint-plugin@7.4.0:
+    resolution: {integrity: sha512-yLFVy13SVSgGWiufaB3lGIUef6dmjBTrfYdFD0xPxBSHdrfyIonl3zGszesOXS2iYy/iVPd5ZLBKryS12s0Scg==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24.0.0}
     peerDependencies:
       eslint: '>=9.0.0'
@@ -6662,7 +6662,7 @@ snapshots:
       eslint: 9.39.4(jiti@2.6.1)
       eslint-compat-utils: 0.5.1(eslint@9.39.4(jiti@2.6.1))
 
-  eslint-plugin-eslint-plugin@7.3.2(eslint@9.39.4(jiti@2.6.1)):
+  eslint-plugin-eslint-plugin@7.4.0(eslint@9.39.4(jiti@2.6.1)):
     dependencies:
       '@eslint-community/eslint-utils': 4.9.1(eslint@9.39.4(jiti@2.6.1))
       eslint: 9.39.4(jiti@2.6.1)
