@@ -1,4 +1,7 @@
-import { type EslintTsDataForgeRules } from '../types/index.mjs';
+import {
+  type EslintTsDataForgeRules,
+  withDefaultOption,
+} from '../types/index.mjs';
 
 export const eslintTsDataForgeRules = {
   'ts-data-forge/prefer-as-int': 'error',
@@ -10,4 +13,5 @@ export const eslintTsDataForgeRules = {
   'ts-data-forge/prefer-arr-is-array-at-least-length': 'error',
   'ts-data-forge/prefer-arr-is-array-of-length': 'error',
   'ts-data-forge/prefer-is-record-and-has-key': 'error',
+  'ts-data-forge/no-unnecessary-type-guard': withDefaultOption('error'),
 } as const satisfies EslintTsDataForgeRules;

@@ -1,4 +1,5 @@
 import { type ESLintPlugin } from '../../../types/index.mjs';
+import { noUnnecessaryTypeGuard } from './no-unnecessary-type-guard.mjs';
 import { preferArrIsArrayAtLeastLength } from './prefer-arr-is-array-at-least-length.mjs';
 import { preferArrIsArrayOfLength } from './prefer-arr-is-array-of-length.mjs';
 import { preferArrIsArray } from './prefer-arr-is-array.mjs';
@@ -19,4 +20,5 @@ export const tsDataForgeRules = {
   'prefer-is-non-null-object': preferIsNonNullObject,
   'prefer-range-for-loop': preferRangeForLoop,
   'prefer-is-record-and-has-key': preferIsRecordAndHasKey,
+  'no-unnecessary-type-guard': noUnnecessaryTypeGuard,
 } as const satisfies ESLintPlugin['rules'];
