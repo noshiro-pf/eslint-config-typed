@@ -129,7 +129,7 @@ export const preferComparisonOverNullishGuard: TSESLint.RuleModule<
           : comparison;
 
         context.report({
-          node: node as TSESTree.Node,
+          node,
           messageId: 'preferComparison',
           data: { comparison, name: resolved.canonicalName },
           fix: (fixer) => fixer.replaceText(node, replacement),

@@ -36,6 +36,24 @@ export const getNamedImports = (
   );
 };
 
+/**
+ * Returns the in-scope local name a given canonical export is imported as
+ * (handling aliases such as `import { isX as y }` → `'y'`), or `undefined` when
+ * it is not imported. Used so autofixes reference the binding that actually
+ * exists rather than the canonical name.
+ */
+export const getImportedLocalName = (
+  node: DeepReadonly<TSESTree.ImportDeclaration> | undefined,
+  importedName: string,
+): string | undefined =>
+  node?.specifiers.find(
+    (specifier) =>
+      specifier.type === AST_NODE_TYPES.ImportSpecifier &&
+      (specifier.imported.type === AST_NODE_TYPES.Identifier
+        ? specifier.imported.name
+        : specifier.imported.value) === importedName,
+  )?.local.name;
+
 type ResolvedCallee = Readonly<{
   /** The canonical (imported) ts-data-forge name, regardless of local alias. */
   canonicalName: string;

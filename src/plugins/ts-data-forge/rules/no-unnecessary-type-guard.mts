@@ -9,7 +9,7 @@ import * as ts from 'typescript';
 import {
   buildCalleeResolver,
   buildImportFixes,
-  getNamedImports,
+  getImportedLocalName,
   getTsDataForgeImport,
 } from './import-utils.mjs';
 
@@ -175,22 +175,30 @@ export const noUnnecessaryTypeGuard: TSESLint.RuleModule<MessageIds, Options> =
           replacement: string,
         ): TSESLint.ReportFixFunction =>
         (fixer) => {
-          const renameFix = fixer.replaceText(propertyNode, replacement);
+          // A namespace member access (`tf.isX`) exposes every export, so the
+          // canonical name is always in scope.
+          if (isNamespace) {
+            return [fixer.replaceText(propertyNode, replacement)];
+          }
 
-          // A namespace member access (`tf.isX`) already has the replacement in
-          // scope, so only a named-import call needs an import added.
-          if (isNamespace) return [renameFix];
+          // If the replacement guard is already imported (possibly under an
+          // alias), rename to its in-scope local name. Otherwise add a new
+          // import and rename to the canonical name.
+          const localName = getImportedLocalName(
+            tsDataForgeImport,
+            replacement,
+          );
 
-          const alreadyImported =
-            getNamedImports(tsDataForgeImport).includes(replacement);
+          if (localName !== undefined) {
+            return [fixer.replaceText(propertyNode, localName)];
+          }
 
-          const importFixes = alreadyImported
-            ? []
-            : buildImportFixes(fixer, program, tsDataForgeImport, [
-                replacement,
-              ]);
-
-          return [...importFixes, renameFix];
+          return [
+            ...buildImportFixes(fixer, program, tsDataForgeImport, [
+              replacement,
+            ]),
+            fixer.replaceText(propertyNode, replacement),
+          ];
         };
 
       const reportConstant = (

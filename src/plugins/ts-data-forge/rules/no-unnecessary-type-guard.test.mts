@@ -296,6 +296,20 @@ describe('no-unnecessary-type-guard', () => {
         errors: [{ messageId: 'replaceTypeGuard' }],
       },
       {
+        name: 'replacement guard imported under an alias renames to the alias',
+        code: dedent`
+          import { isNonNullish, isNotUndefined as inu } from 'ts-data-forge';
+          declare const x: string | undefined;
+          const y = isNonNullish(x);
+        `,
+        output: dedent`
+          import { isNonNullish, isNotUndefined as inu } from 'ts-data-forge';
+          declare const x: string | undefined;
+          const y = inu(x);
+        `,
+        errors: [{ messageId: 'replaceTypeGuard' }],
+      },
+      {
         name: 'isNonNullish that only removes null -> isNotNull (import inserted)',
         code: dedent`
           import { isNonNullish } from 'ts-data-forge';
