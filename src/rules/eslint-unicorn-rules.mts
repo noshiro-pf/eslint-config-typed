@@ -90,7 +90,6 @@ export const eslintUnicornRules = {
   'unicorn/no-useless-undefined': 'off', // this conflicts with @typescript-eslint/init-declarations
   'unicorn/no-zero-fractions': 'error',
   'unicorn/numeric-separators-style': 'off',
-  'unicorn/prefer-add-event-listener': withDefaultOption('error'),
   'unicorn/prefer-array-find': 'off', // Covered by @typescript-eslint/prefer-find
   'unicorn/prefer-array-flat': withDefaultOption('error'),
   'unicorn/prefer-array-flat-map': 'error',
@@ -191,27 +190,8 @@ export const eslintUnicornRules = {
   'unicorn/require-module-attributes': 'error',
   'unicorn/require-module-specifiers': 'error',
 
-  // For browser environment only
-  'unicorn/no-document-cookie': 'error',
-  'unicorn/no-invalid-fetch-options': 'error',
-  'unicorn/no-invalid-remove-event-listener': 'error',
-  'unicorn/prefer-blob-reading-methods': 'error',
-  'unicorn/prefer-classlist-toggle': 'error',
-  'unicorn/prefer-dom-node-append': 'error',
-  'unicorn/dom-node-dataset': withDefaultOption('error'),
-  'unicorn/prefer-dom-node-remove': 'error',
-  'unicorn/prefer-dom-node-text-content': 'error',
-  'unicorn/prefer-event-target': 'error',
-  'unicorn/prefer-keyboard-event-key': 'error',
-  'unicorn/prefer-modern-dom-apis': 'error',
-  'unicorn/prefer-query-selector': withDefaultOption('error'),
-  // Turned off because we can't distinguish `widow.postMessage` and `{Worker,MessagePort,Client,BroadcastChannel}#postMessage()`
-  // See #1396
-  'unicorn/require-post-message-target-origin': 'off',
-
   'unicorn/no-immediate-mutation': 'error',
   'unicorn/no-useless-collection-argument': 'error',
-  'unicorn/prefer-response-static-json': 'error',
   'unicorn/isolated-functions': 'off',
   'unicorn/consistent-template-literal-escape': 'error',
   'unicorn/no-useless-iterator-to-array': 'error',
@@ -219,7 +199,6 @@ export const eslintUnicornRules = {
   'unicorn/switch-case-break-position': 'error',
 
   // Rules added in eslint-plugin-unicorn v66
-  'unicorn/better-dom-traversing': 'error',
   'unicorn/class-reference-in-static-methods': withDefaultOption('error'),
   'unicorn/comment-content': 'off',
   // [
@@ -242,7 +221,6 @@ export const eslintUnicornRules = {
 
   'unicorn/consistent-export-decorator-position': withDefaultOption('error'),
   'unicorn/consistent-function-style': 'off',
-  'unicorn/consistent-json-file-read': withDefaultOption('error'),
   'unicorn/consistent-optional-chaining': 'error',
   'unicorn/explicit-timer-delay': withDefaultOption('error'), // TODO: check this by enabling strict-ts-lib
   'unicorn/id-match': withDefaultOption('error'),
@@ -251,9 +229,7 @@ export const eslintUnicornRules = {
   'unicorn/no-array-from-fill': 'error',
   // Conflicts with the standard JSDoc `*`-prefixed comment style used across this repo
   'unicorn/no-asterisk-prefix-in-documentation-comments': 'off',
-  'unicorn/no-blob-to-file': 'error',
   'unicorn/no-break-in-nested-loop': 'error',
-  'unicorn/no-canvas-to-image': 'error',
   'unicorn/no-computed-property-existence-check': 'error',
   'unicorn/no-confusing-array-splice': 'error',
   'unicorn/no-confusing-array-with': 'error',
@@ -261,14 +237,10 @@ export const eslintUnicornRules = {
   'unicorn/no-duplicate-loops': 'error',
   'unicorn/no-duplicate-set-values': 'error',
   'unicorn/no-error-property-assignment': 'error',
-  'unicorn/no-exports-in-scripts': 'error',
   'unicorn/no-for-each': 'error',
   'unicorn/no-global-object-property-assignment': 'error',
-  'unicorn/no-incorrect-query-selector': 'error',
   'unicorn/no-incorrect-template-string-interpolation': 'error',
   'unicorn/no-invalid-argument-count': 'error',
-  'unicorn/no-invalid-file-input-accept': 'error',
-  'unicorn/no-late-current-target-access': 'error',
   // Its autofix collapses intentionally multi-line `//` comments into one long
   // line, which hurts readability; there is no option to opt out, so disable it.
   'unicorn/no-manually-wrapped-comments': 'off',
@@ -288,8 +260,6 @@ export const eslintUnicornRules = {
   'unicorn/no-unnecessary-splice': 'error',
   'unicorn/no-unreadable-new-expression': 'error',
   'unicorn/no-unreadable-object-destructuring': 'error',
-  'unicorn/no-unsafe-buffer-conversion': 'error',
-  'unicorn/no-unsafe-dom-html': 'error',
   'unicorn/no-unsafe-property-key': 'error',
   'unicorn/no-unsafe-string-replacement': 'error',
   'unicorn/no-unused-array-method-return': 'error',
@@ -298,7 +268,6 @@ export const eslintUnicornRules = {
   'unicorn/no-useless-else': 'error',
   'unicorn/no-useless-recursion': 'error',
   'unicorn/no-useless-template-literals': 'error',
-  'unicorn/prefer-add-event-listener-options': 'error',
   'unicorn/prefer-array-from-map': 'error',
   'unicorn/prefer-array-last-methods': 'error',
 
@@ -308,7 +277,6 @@ export const eslintUnicornRules = {
 
   'unicorn/prefer-direct-iteration': 'error',
   'unicorn/prefer-dispose': 'error',
-  'unicorn/prefer-dom-node-html-methods': 'error',
   'unicorn/prefer-early-return': withDefaultOption('error'),
   'unicorn/prefer-get-or-insert-computed': 'error',
 
@@ -327,7 +295,6 @@ export const eslintUnicornRules = {
   'unicorn/prefer-iterator-concat': 'error',
   'unicorn/prefer-iterator-to-array': 'error',
   'unicorn/prefer-iterator-to-array-at-end': 'error',
-  'unicorn/prefer-location-assign': 'error',
   'unicorn/prefer-math-abs': 'error',
 
   // This rule is disabled because it would require the container to be directly included in the React hooks dependencies.
@@ -338,10 +305,8 @@ export const eslintUnicornRules = {
   'unicorn/prefer-object-define-properties': 'error',
   'unicorn/prefer-object-destructuring-defaults': 'error',
   'unicorn/prefer-object-iterable-methods': 'error',
-  'unicorn/prefer-path2d': 'error',
   'unicorn/prefer-private-class-fields': 'error',
   'unicorn/prefer-queue-microtask': withDefaultOption('error'),
-  'unicorn/prefer-scoped-selector': 'error',
   'unicorn/prefer-short-arrow-method': 'error',
   'unicorn/prefer-simple-sort-comparator': 'error',
   'unicorn/prefer-single-array-predicate': 'error',
@@ -360,18 +325,53 @@ export const eslintUnicornRules = {
   // Duplicate: @typescript-eslint/require-array-sort-compare
   'unicorn/require-array-sort-compare': 'off',
 
-  'unicorn/require-css-escape': withDefaultOption('error'),
-  'unicorn/require-passive-events': 'error',
   'unicorn/require-proxy-trap-boolean-return': 'error',
 
   // Default `maxComplexity` of 1 is too strict for real-world try blocks
   'unicorn/try-complexity': 'off',
+
+  // For browser environment only
+  'unicorn/no-document-cookie': 'error',
+  'unicorn/no-invalid-fetch-options': 'error',
+  'unicorn/no-invalid-remove-event-listener': 'error',
+  'unicorn/prefer-blob-reading-methods': 'error',
+  'unicorn/prefer-classlist-toggle': 'error',
+  'unicorn/prefer-dom-node-append': 'error',
+  'unicorn/dom-node-dataset': withDefaultOption('error'),
+  'unicorn/prefer-dom-node-remove': 'error',
+  'unicorn/prefer-dom-node-text-content': 'error',
+  'unicorn/prefer-event-target': 'error',
+  'unicorn/prefer-keyboard-event-key': 'error',
+  'unicorn/prefer-modern-dom-apis': 'error',
+  'unicorn/prefer-query-selector': withDefaultOption('error'),
+  // Turned off because we can't distinguish `widow.postMessage` and `{Worker,MessagePort,Client,BroadcastChannel}#postMessage()`
+  // See #1396
+  'unicorn/require-post-message-target-origin': 'off',
+  'unicorn/prefer-add-event-listener': withDefaultOption('error'),
+  'unicorn/better-dom-traversing': 'error',
+  'unicorn/no-blob-to-file': 'error',
+  'unicorn/no-canvas-to-image': 'error',
+  'unicorn/no-incorrect-query-selector': 'error',
+  'unicorn/no-invalid-file-input-accept': 'error',
+  'unicorn/no-late-current-target-access': 'error',
+  'unicorn/no-unsafe-dom-html': 'error',
+  'unicorn/prefer-add-event-listener-options': 'error',
+  'unicorn/prefer-dom-node-html-methods': 'error',
+  'unicorn/prefer-location-assign': 'error',
+  'unicorn/prefer-path2d': 'error',
+  'unicorn/prefer-scoped-selector': 'error',
+  'unicorn/prefer-response-static-json': 'error', // Fetch API `Response`
+  'unicorn/require-css-escape': withDefaultOption('error'),
+  'unicorn/require-passive-events': 'error',
 
   // For Node.js environment only
   'unicorn/no-new-buffer': 'error',
   'unicorn/no-process-exit': 'off',
   'unicorn/prefer-module': 'error',
   'unicorn/prefer-node-protocol': 'error',
+  'unicorn/no-unsafe-buffer-conversion': 'error', // `Buffer` / `node:buffer`
+  'unicorn/consistent-json-file-read': withDefaultOption('error'), // `fs.readFile`/`readFileSync` of JSON
+  'unicorn/no-exports-in-scripts': 'error', // only triggers on `#!` shebang scripts
 
   // deprecated rules
   'unicorn/prefer-json-parse-buffer': 0,
