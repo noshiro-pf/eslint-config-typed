@@ -236,14 +236,17 @@ export const eslintUnicornRules = {
   //   },
   // ],
   'unicorn/consistent-class-member-order': withDefaultOption('error'),
-  'unicorn/consistent-compound-words': withDefaultOption('error'),
+
+  // This rule is turned off because it will cause errors in many existing code elements, such as Material UI's "CheckBoxIcon".
+  'unicorn/consistent-compound-words': 'off',
+
   'unicorn/consistent-export-decorator-position': withDefaultOption('error'),
   'unicorn/consistent-function-style': 'off',
   'unicorn/consistent-json-file-read': withDefaultOption('error'),
   'unicorn/consistent-optional-chaining': 'error',
   'unicorn/explicit-timer-delay': withDefaultOption('error'), // TODO: check this by enabling strict-ts-lib
   'unicorn/id-match': withDefaultOption('error'),
-  'unicorn/max-nested-calls': withDefaultOption('error'),
+  'unicorn/max-nested-calls': 'off',
   'unicorn/no-array-fill-with-reference-type': 'error', // TODO: check this by enabling strict-ts-lib
   'unicorn/no-array-from-fill': 'error',
   // Conflicts with the standard JSDoc `*`-prefixed comment style used across this repo
@@ -298,24 +301,38 @@ export const eslintUnicornRules = {
   'unicorn/prefer-add-event-listener-options': 'error',
   'unicorn/prefer-array-from-map': 'error',
   'unicorn/prefer-array-last-methods': 'error',
-  'unicorn/prefer-await': 'error',
+
+  // If you're handling Promises within React.useEffect, it's difficult to convert them to async functions, so this rule is disabled.
+  // Promises that aren't `await` or `.catch` are checked by `@typescript-eslint/no-floating-promises`, so only intentionally unawaited Promises remain.
+  'unicorn/prefer-await': 'off',
+
   'unicorn/prefer-direct-iteration': 'error',
   'unicorn/prefer-dispose': 'error',
   'unicorn/prefer-dom-node-html-methods': 'error',
   'unicorn/prefer-early-return': withDefaultOption('error'),
   'unicorn/prefer-get-or-insert-computed': 'error',
-  'unicorn/prefer-global-number-constants': 'error',
-  'unicorn/prefer-https': 'error',
+
+  // prefer Number constants over global constants like Infinity, NaN to avoid accidental shadowing.
+  'unicorn/prefer-global-number-constants': 'off',
+
+  // This rule should not be enabled globally; it should only apply to the `src` directory and not to the `tests` directory.
+  'unicorn/prefer-https': 'off',
+
   'unicorn/prefer-identifier-import-export-specifiers': 'error',
-  'unicorn/prefer-includes-over-repeated-comparisons':
-    withDefaultOption('error'),
+
+  // This rule is turned off because it may break the behavior of type guards.
+  'unicorn/prefer-includes-over-repeated-comparisons': 'off',
+
   'unicorn/prefer-iterable-in-constructor': 'error',
   'unicorn/prefer-iterator-concat': 'error',
   'unicorn/prefer-iterator-to-array': 'error',
   'unicorn/prefer-iterator-to-array-at-end': 'error',
   'unicorn/prefer-location-assign': 'error',
   'unicorn/prefer-math-abs': 'error',
-  'unicorn/prefer-minimal-ternary': 'error',
+
+  // This rule is disabled because it would require the container to be directly included in the React hooks dependencies.
+  'unicorn/prefer-minimal-ternary': 'off',
+
   'unicorn/prefer-number-coercion': 'error',
   'unicorn/prefer-number-is-safe-integer': 'error',
   'unicorn/prefer-object-define-properties': 'error',
@@ -339,21 +356,25 @@ export const eslintUnicornRules = {
   'unicorn/prefer-uint8array-base64': 'error',
   'unicorn/prefer-unicode-code-point-escapes': 'error',
   'unicorn/prefer-url-href': 'error',
-  'unicorn/require-array-sort-compare': 'error',
+
+  // Duplicate: @typescript-eslint/require-array-sort-compare
+  'unicorn/require-array-sort-compare': 'off',
+
   'unicorn/require-css-escape': withDefaultOption('error'),
   'unicorn/require-passive-events': 'error',
   'unicorn/require-proxy-trap-boolean-return': 'error',
+
   // Default `maxComplexity` of 1 is too strict for real-world try blocks
   'unicorn/try-complexity': 'off',
 
   // For Node.js environment only
   'unicorn/no-new-buffer': 'error',
   'unicorn/no-process-exit': 'off',
-  'unicorn/prefer-json-parse-buffer': 0,
   'unicorn/prefer-module': 'error',
   'unicorn/prefer-node-protocol': 'error',
 
   // deprecated rules
+  'unicorn/prefer-json-parse-buffer': 0,
   'unicorn/better-regex': 0, // removed in v66
   'unicorn/no-hex-escape': 0, // removed in v66
   'unicorn/prefer-dom-node-dataset': 0, // renamed to unicorn/dom-node-dataset in v66
