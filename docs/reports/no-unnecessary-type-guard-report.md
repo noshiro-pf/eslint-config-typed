@@ -133,3 +133,90 @@ type NonEmptyString = Brand<string, 'NonEmptyString'>;
   `pnpm run lint` は実行不可（本変更とは無関係）。型チェックとテストで検証済み。
   未使用の `// eslint-disable-next-line no-bitwise` ディレクティブは削除済み
   （本リポジトリでは `no-bitwise` 未有効化のため）。
+
+> 注: 下記「追加対応」で「常に false」検出とリテラル autofix を実装したため、上記
+> 「スコープ外」のうち該当項目は解消済み。
+
+---
+
+## 追加対応（2 回目の依頼）
+
+### 依頼内容
+
+> - 常に false になる guard も検知・修正できるようにしてください。
+> - 自動修正で常に true/false になる type guard を true/false literal に置換するようにもしてください。
+> - is(Not)Null, is(Not)Undefined は array.filter の callback などに `array.filter(isNotUndefined)` のように渡す用途で作られたもので、コード上で明示的に引数が渡されるケース（e.g. `if (isNotUndefined(x) && ... ) { ... }` ）では `u !== undefined` のように直接比較をする方が望ましいです。これを別ルールとして追加してください。
+>   これも report に追記してください。
+
+### 1. 「常に false」の検出（`no-unnecessary-type-guard` 拡張）
+
+判定を「常に true / 常に false」の両方に一般化した（1 回目でスコープ外としていた
+デッドコード方向を実装）。
+
+- `narrowTo A`（`isX`）: target 内メンバ無し（`present` 空）→ **常に false** /
+  A 外メンバ無し（入力 ⊆ A）→ **常に true**
+- `excludeFrom A`（`isNotX`）: 除去対象なし → **常に true** /
+  A 外メンバ無し（入力が全て除去対象）→ **常に false**
+- `isNonEmptyString`: 非空文字列になり得るメンバが一つも無い → **常に false**
+  （例 `''`, `number`, nullish のみ）／空でない文字列確定のみ → **常に true**
+
+例：`isBoolean(x: string)`＝常に false、`isNotUndefined(x: undefined)`＝常に false、
+`isNonNullish(x: null | undefined)`＝常に false。
+
+### 2. true/false literal への autofix
+
+常に true/false になる呼び出しは、呼び出し全体を `true` / `false` リテラルに置換する
+autofix を追加（messageId を `unnecessaryTypeGuard` から `alwaysTrue` / `alwaysFalse` に変更）。
+
+- **副作用安全性**: リテラル置換は引数式を捨てるため、引数が副作用を持ち得る場合
+  （`isNotUndefined(getValue())` など）は autofix を付けず検出のみとする。
+  安全と判定するのは識別子・`this`・リテラル・それらのみで構成される member access。
+- logical operator の operand 等になっている `isX(*)` が `true`/`false` になることで、
+  他ルール（`no-unnecessary-condition` 等）による機械的整理が可能になる。
+
+### 3. 新ルール `prefer-comparison-over-nullish-guard`
+
+`isNull` / `isNotNull` / `isUndefined` / `isNotUndefined` を**明示的な引数付きで呼び出した
+場合**に、直接比較（`x === null` / `x !== undefined` 等）への置換を促す型情報不要の構文ルール。
+
+- point-free 渡し（`xs.filter(isNotUndefined)`）は対象外（呼び出しではないため）。
+- autofix で `isNotUndefined(x)` → `x !== undefined` に置換。
+- 演算子優先順位を考慮し、
+    - 親文脈が単項 `!` / `await` / 二項演算 / member-access の object / call の callee /
+      非 null 表明のときは比較全体を括弧で囲む（例 `!isNotUndefined(x)` →
+      `!(x !== undefined)`）。
+    - 引数が equality より低優先（`?:`・`&&`・代入・sequence・arrow・yield）のときは引数を
+      括弧で囲む（例 `isNotUndefined(cond ? a : b)` → `(cond ? a : b) !== undefined`）。
+- named import（エイリアス可）・namespace import 両対応。`error` で有効化。
+
+### リファクタリング
+
+両ルールで使う「callee → canonical 関数名（エイリアス／namespace 解決）」のロジックを
+`import-utils.mts` の `buildCalleeResolver` に集約。
+
+### 追加・変更ファイル（2 回目）
+
+| ファイル                                                                        | 内容                                                   |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `src/plugins/ts-data-forge/rules/no-unnecessary-type-guard.mts`                 | 常に true/false 検出 + リテラル autofix へ拡張         |
+| `src/plugins/ts-data-forge/rules/no-unnecessary-type-guard.test.mts`            | 28 件へ拡充                                            |
+| `src/plugins/ts-data-forge/rules/prefer-comparison-over-nullish-guard.mts`      | 新ルール本体                                           |
+| `src/plugins/ts-data-forge/rules/prefer-comparison-over-nullish-guard.test.mts` | 新ルールテスト（11 件）                                |
+| `src/plugins/ts-data-forge/rules/import-utils.mts`                              | `buildCalleeResolver` を追加                           |
+| `src/plugins/ts-data-forge/rules/rules.mts`                                     | 新ルールを登録                                         |
+| `src/rules/eslint-ts-data-forge-rules.mts`                                      | `prefer-comparison-over-nullish-guard: 'error'` を追加 |
+| `src/types/rules/eslint-ts-data-forge-rules.mts`                                | 型定義を再生成                                         |
+
+### 検証（追加分）
+
+- `pnpm run tsc`：パス
+- `no-unnecessary-type-guard.test.mts`：**28 件**（常に true/false・置換・副作用なし時の no-fix を網羅）
+- `prefer-comparison-over-nullish-guard.test.mts`：**11 件**（優先順位の括弧付けを網羅）
+- ts-data-forge プラグイン全体：**136 件パス**（既存ルールへの影響なし、決定的に成功）
+
+### 補足
+
+- `no-unnecessary-type-guard`（常に true/false）と `prefer-comparison-over-nullish-guard`
+  は同じ `is(Not)Null/Undefined(x)` 呼び出しで同時に発火し得る（例 `isNotUndefined(x: string)`）。
+  両者は独立ルールで autofix が競合する場合は ESLint が 1 パスずつ適用するため安全。用途に応じて
+  個別に on/off 可能。

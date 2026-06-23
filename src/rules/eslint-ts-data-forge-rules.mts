@@ -14,4 +14,5 @@ export const eslintTsDataForgeRules = {
   'ts-data-forge/prefer-arr-is-array-of-length': 'error',
   'ts-data-forge/prefer-is-record-and-has-key': 'error',
   'ts-data-forge/no-unnecessary-type-guard': withDefaultOption('error'),
+  'ts-data-forge/prefer-comparison-over-nullish-guard': 'error',
 } as const satisfies EslintTsDataForgeRules;

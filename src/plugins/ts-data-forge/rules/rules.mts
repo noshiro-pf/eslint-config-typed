@@ -6,6 +6,7 @@ import { preferArrIsArray } from './prefer-arr-is-array.mjs';
 import { preferArrIsNonEmpty } from './prefer-arr-is-non-empty.mjs';
 import { preferArrSum } from './prefer-arr-sum.mjs';
 import { preferAsInt } from './prefer-as-int.mjs';
+import { preferComparisonOverNullishGuard } from './prefer-comparison-over-nullish-guard.mjs';
 import { preferIsNonNullObject } from './prefer-is-non-null-object.mjs';
 import { preferIsRecordAndHasKey } from './prefer-is-record-and-has-key.mjs';
 import { preferRangeForLoop } from './prefer-range-for-loop.mjs';
@@ -21,4 +22,5 @@ export const tsDataForgeRules = {
   'prefer-range-for-loop': preferRangeForLoop,
   'prefer-is-record-and-has-key': preferIsRecordAndHasKey,
   'no-unnecessary-type-guard': noUnnecessaryTypeGuard,
+  'prefer-comparison-over-nullish-guard': preferComparisonOverNullishGuard,
 } as const satisfies ESLintPlugin['rules'];
