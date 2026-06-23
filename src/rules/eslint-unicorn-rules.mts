@@ -344,7 +344,7 @@ export const eslintUnicornRules = {
   'unicorn/prefer-keyboard-event-key': 'error',
   'unicorn/prefer-modern-dom-apis': 'error',
   'unicorn/prefer-query-selector': withDefaultOption('error'),
-  // Turned off because we can't distinguish `widow.postMessage` and `{Worker,MessagePort,Client,BroadcastChannel}#postMessage()`
+  // Turned off because we can't distinguish `window.postMessage` and `{Worker,MessagePort,Client,BroadcastChannel}#postMessage()`
   // See #1396
   'unicorn/require-post-message-target-origin': 'off',
   'unicorn/prefer-add-event-listener': withDefaultOption('error'),
