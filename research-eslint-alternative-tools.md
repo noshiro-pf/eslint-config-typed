@@ -15,6 +15,8 @@
 - **rslint / tsslint / tsl** はカスタム type-aware ルールを書けるが、**既存 ESLint プラグインエコシステムをそのまま動かせない**（＝上位互換ではない）か、実験的段階。
 - **VSCode DX を加味すると**: 22 個の type-aware カスタムルールは oxlint ではエディタでもフィードバックが出ない。逆に **tsl / tsslint は tsserver 内で動くため、その領域でむしろ現状 ESLint より優れたリアルタイム体験**を出せる。→ ハイブリッドの型担当は「tsl/tsslint 移植」が DX 上位（ただし移植工数は大）。詳細は §5。
 - **TypeScript v7（tsgo）を見据えると結論が動く**: TS7 は tsserver プラグイン API（Strada）を引き継がないため **tsslint は TS7 で非互換（行き止まり）**、tsl も現状 JS の TS API 依存で tsgo 対応は未定。一方 **oxlint（type-aware = tsgolint）と rslint は typescript-go ネイティブ**。→ 型担当の将来の受け皿は「tsslint/tsl 移植」より **native-tsgo 側（oxlint の corsa / rslint）**が本命。詳細は §6。
+- **flat config の運用上の利点（ファイル分割・glob・bulk suppressions）を軸に据えると**: **bulk suppressions（`eslint-suppressions.json`）を持つのは 2026-07 現在 ESLint だけ**（oxlint は Issue #10549 でロードマップ入りだが未実装）。また **rslint が ESLint v10 互換の flat config（TS の `defineConfig`）を採用**したことで、本ライブラリの型付き config 資産が最も自然に引き継げる移行先は rslint になった。詳細は §7。
+- **「エディタが重い」問題への現実解**: ルール数の大半（syntactic 群）を oxlint LSP に退避すればエディタの ESLint 負荷は激減し、**oxlint は `oxc.configPath` でエディタ用/CLI 用の config を分離できる**。ESLint 側も v10.1 で bulk suppressions が IDE に反映されるようになった。詳細は §7。
 
 ### 推奨方針
 
@@ -32,15 +34,17 @@
 
 `src/` の実装から抽出した要件:
 
-| 要件                                    | 実体                                                                                                                                                                                                     | 移行先での必須度           |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
-| 主要 ESLint プラグインの設定済み config | typescript-eslint, import, unicorn, react, react-hooks, jsx-a11y, promise, functional, security, n, jest/vitest, playwright/cypress, testing-library, stylistic 等 30+ の rule 集約（`src/rules/*.mts`） | ★★★                        |
-| **syntactic カスタムルール**            | 約 18 ルール（`react-coding-style/*`, `tree-shakable/import-star`, `strict-dependencies`, `immer-coding-style`, `no-enums` 等）                                                                          | ★★★                        |
-| **type-aware カスタムルール**           | **22 ルール**（下表）                                                                                                                                                                                    | ★★★（核心）                |
-| flat config の表現力                    | glob 単位の override、config 合成                                                                                                                                                                        | ★★★                        |
-| 型付き config オーサリング              | `defineConfig`, `defineKnownRules`, `RulesOptions` 型                                                                                                                                                    | ★★（ライブラリ固有の価値） |
-| auto-fix / suggestion                   | 多くのカスタムルールが fixer 実装あり                                                                                                                                                                    | ★★                         |
-| IDE 統合                                | VS Code                                                                                                                                                                                                  | ★★                         |
+| 要件                                    | 実体                                                                                                                                                                                                     | 移行先での必須度            |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| 主要 ESLint プラグインの設定済み config | typescript-eslint, import, unicorn, react, react-hooks, jsx-a11y, promise, functional, security, n, jest/vitest, playwright/cypress, testing-library, stylistic 等 30+ の rule 集約（`src/rules/*.mts`） | ★★★                         |
+| **syntactic カスタムルール**            | 約 18 ルール（`react-coding-style/*`, `tree-shakable/import-star`, `strict-dependencies`, `immer-coding-style`, `no-enums` 等）                                                                          | ★★★                         |
+| **type-aware カスタムルール**           | **22 ルール**（下表）                                                                                                                                                                                    | ★★★（核心）                 |
+| flat config の表現力                    | glob 単位の override、config 合成                                                                                                                                                                        | ★★★                         |
+| 型付き config オーサリング              | `defineConfig`, `defineKnownRules`, `RulesOptions` 型                                                                                                                                                    | ★★（ライブラリ固有の価値）  |
+| auto-fix / suggestion                   | 多くのカスタムルールが fixer 実装あり                                                                                                                                                                    | ★★                          |
+| IDE 統合                                | VS Code                                                                                                                                                                                                  | ★★                          |
+| **bulk suppressions（段階的導入）**     | 既存コードベースへ厳格ルールを一括導入し、既存エラーを suppressions ファイルに記録して段階的に解消（ESLint v9.24+ の `--suppress-all` / `eslint-suppressions.json`）                                     | ★★★（利用者側の導入現実性） |
+| **エディタ負荷の分散**                  | 有効ルールが多くエディタが重い → 重いルールを CLI 専用 config に分離する運用が既にある。**エディタの即時エラー表示・auto-fix は維持したい**                                                              | ★★★（現在の実運用の痛点）   |
 
 ### 型情報に依存するカスタムルール（22個 = 移行の関門）
 
@@ -65,6 +69,8 @@
 7. 型付き config オーサリングの引き継ぎ
 8. **VSCode 拡張の開発体験（DX）** — リアルタイム診断 / エディタでの type-aware / カスタムルール開発の反復ループ ← ルールライブラリでは特に重要
 9. **TypeScript v7（tsgo / typescript-go）前方互換性** — 型情報エンジンが TS7 ネイティブか／将来動くか ← 型 lint の将来性に直結（詳細は §6）
+10. **bulk suppressions ／ 段階的導入支援** — 既存コードベースに厳格ルールを適用しつつ既存エラーを記録・漸進解消できるか（詳細は §7）
+11. **エディタ負荷の分散可能性** — エディタ用と CLI 用で config／ルールセットを分離でき、即時エラー表示と auto-fix を軽量に保てるか（詳細は §7）
 
 ---
 
@@ -76,15 +82,17 @@
 
 > Vite+ は当初（2025-10）有償ライセンスを予定していたが、**2026-03 の alpha で方針転換し MIT で完全 OSS 化**。収益源はデプロイ基盤「Void」に移した。したがって **oxlint / Vite+ にライセンス費用の懸念はない**。
 
-| 軸                            | 評価      | 備考                                                                                                                                                                                                                                                                                 |
-| ----------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| ESLint プラグイン互換         | ◎         | **JS Plugins Alpha（2026-03）**。ESLint プラグイン API をほぼ全面実装（ESLint 本体の 33,006 テスト 100% pass）。既存プラグインは「ほぼ無改造で動く」。React hooks / Stylistic / Testing Library / SonarJS 等で検証済み。**「ESLint ユーザーの約 80% はそのまま乗り換え可能」**と公称 |
-| syntactic カスタムルール      | ◎         | JS/TS でカスタムルールを記述可。AST traversal・scope・code path・fixer/suggestion・IDE 診断まで対応。ESLint とほぼ同一 API                                                                                                                                                           |
-| **type-aware カスタムルール** | ✗（重大） | **未サポート**。ただし typescript-eslint の type-aware ルールは native 実装で内蔵（tsgolint 経由、61 中 59 ルール対応）。実験的な `corsa-oxlint` で独自 type-aware プラグインを書く道はあるが **early WIP**                                                                          |
-| flat config 表現力            | ○         | 設定は `.oxlintrc.json`。glob override 可。ただし **JS の flat config ではなく JSON**。`@oxlint/migrate` で eslint.config.js から自動移行                                                                                                                                            |
-| 速度                          | ◎         | ESLint 比 50〜100倍。type-aware も tsgolint（typescript-go 上）で「従来 1分 → 10秒未満」。カスタム JS ルールを 1 個入れると overhead が乗るが、それでも ESLint 比 7倍前後を維持                                                                                                      |
-| 成熟度・後ろ盾                | ◎         | VoidZero が本体。Midjourney / Preact / PostHog で JS plugin が本番投入済み                                                                                                                                                                                                           |
-| 型付き config 引き継ぎ        | △         | JSON 設定のため、本ライブラリの型付き `defineConfig` 資産は直接は活きない                                                                                                                                                                                                            |
+| 軸                            | 評価        | 備考                                                                                                                                                                                                                                                                                 |
+| ----------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ESLint プラグイン互換         | ◎           | **JS Plugins Alpha（2026-03）**。ESLint プラグイン API をほぼ全面実装（ESLint 本体の 33,006 テスト 100% pass）。既存プラグインは「ほぼ無改造で動く」。React hooks / Stylistic / Testing Library / SonarJS 等で検証済み。**「ESLint ユーザーの約 80% はそのまま乗り換え可能」**と公称 |
+| syntactic カスタムルール      | ◎           | JS/TS でカスタムルールを記述可。AST traversal・scope・code path・fixer/suggestion・IDE 診断まで対応。ESLint とほぼ同一 API                                                                                                                                                           |
+| **type-aware カスタムルール** | ✗（重大）   | **未サポート**。ただし typescript-eslint の type-aware ルールは native 実装で内蔵（tsgolint 経由、61 中 59 ルール対応）。実験的な `corsa-oxlint` で独自 type-aware プラグインを書く道はあるが **early WIP**                                                                          |
+| flat config 表現力            | ○           | 設定は `.oxlintrc.json`。glob override・nested config（ディレクトリ単位）・`extends` 継承に対応し、**ファイル分割・合成は JSON なりに可能**。ただし **JS の flat config ではなく JSON**。`@oxlint/migrate` で eslint.config.js から自動移行                                          |
+| **bulk suppressions**         | ✗（未実装） | **ESLint 式の suppressions ファイルは未対応**。要望 Issue #10549 が「Oxlint Q2」マイルストーンに載っているが 2026-07 現在未実装・担当者なし。現状は inline の disable コメントのみ                                                                                                   |
+| エディタ/CLI の config 分離   | ○           | VSCode 拡張の `oxc.configPath` でエディタ専用 config を指せるため、**「エディタは軽い config・CLI はフル config」の分離運用が可能**（ただし LSP が configPath を無視する既知バグ報告 #21311 あり）                                                                                   |
+| 速度                          | ◎           | ESLint 比 50〜100倍。type-aware も tsgolint（typescript-go 上）で「従来 1分 → 10秒未満」。カスタム JS ルールを 1 個入れると overhead が乗るが、それでも ESLint 比 7倍前後を維持                                                                                                      |
+| 成熟度・後ろ盾                | ◎           | VoidZero が本体。Midjourney / Preact / PostHog で JS plugin が本番投入済み                                                                                                                                                                                                           |
+| 型付き config 引き継ぎ        | △           | JSON 設定のため、本ライブラリの型付き `defineConfig` 資産は直接は活きない                                                                                                                                                                                                            |
 
 **判定**: **完全上位互換ではないが、戦略的に最も近い。** 22 個の type-aware カスタムルール以外は今すぐ移行可能。type-aware カスタムルール API が実用化すれば「完全上位互換」に到達する最有力候補。**移行の主軸に据えるべき。**
 
@@ -96,16 +104,17 @@
 
 **位置づけ**: typescript-go 製の ESLint 互換 linter。tsgolint（@auvred の PoC）の fork を継続開発。
 
-| 軸                            | 評価 | 備考                                                                                                                                                             |
-| ----------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ESLint プラグイン互換         | △    | 「best effort ESLint compatible」。typescript-eslint / ESLint の**主要ルールは内蔵**するが、**任意のサードパーティ ESLint プラグインをそのまま動かす保証はなし** |
-| syntactic カスタムルール      | ○    | カスタムルール記述を掲げる                                                                                                                                       |
-| **type-aware カスタムルール** | ○    | **AST・型情報・グローバル checker をカスタムルールに公開**（クロスモジュール解析可）。type-aware がデフォルト有効                                                |
-| flat config                   | △    | 明言なし                                                                                                                                                         |
-| 速度                          | ◎    | 公称 ESLint 比 20〜40倍（未検証）                                                                                                                                |
-| 成熟度                        | ✗    | **experimental / pre-1.0**（v0.6.x、★400台）。実運用は時期尚早                                                                                                   |
+| 軸                            | 評価 | 備考                                                                                                                                                                                                                                                                                               |
+| ----------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ESLint プラグイン互換         | △〜○ | 「best effort ESLint compatible」。typescript-eslint / ESLint の**主要ルールは内蔵**。config の `plugins` にサードパーティ ESLint プラグインをマッピングして `<plugin>/<rule>` 名前空間で使う仕組みはあるが、**任意のプラグインがそのまま動く保証はなし**                                          |
+| syntactic カスタムルール      | ○    | カスタムルール記述を掲げる                                                                                                                                                                                                                                                                         |
+| **type-aware カスタムルール** | ○    | **AST・型情報・グローバル checker をカスタムルールに公開**（クロスモジュール解析可）。type-aware がデフォルト有効                                                                                                                                                                                  |
+| **flat config**               | ◎    | **ESLint v10 互換の flat config を正式採用**。`rslint.config.ts` / `.mts` 等の **JS/TS 設定ファイル＋`defineConfig`** が推奨形式（JSON config は deprecated）。`files`/`ignores` glob、entry 合成・マージ、`languageOptions.parserOptions.projectService`、monorepo の nearest-config 探索まで対応 |
+| bulk suppressions             | ✗    | suppressions ファイルの言及なし（ドキュメント上未対応）                                                                                                                                                                                                                                            |
+| 速度                          | ◎    | 公称 ESLint 比 20〜40倍（未検証）                                                                                                                                                                                                                                                                  |
+| 成熟度                        | ✗    | **experimental / pre-1.0**（v0.6.5、2026-07）。実運用は時期尚早                                                                                                                                                                                                                                    |
 
-**判定**: **カスタム type-aware ルールを書ける点は本ライブラリと相性が良い**が、既存 ESLint プラグイン群をそのまま動かせない＝上位互換ではない。かつ実験段階。**要ウォッチだが今は非推奨。** oxlint の type-aware カスタム対応と競争関係にあり、動向を追う価値は高い。
+**判定**: **カスタム type-aware ルールを書ける点は本ライブラリと相性が良い**が、既存 ESLint プラグイン群をそのまま動かせる保証がない＝上位互換ではない。かつ実験段階。**要ウォッチだが今は非推奨。** oxlint の type-aware カスタム対応と競争関係にあり、動向を追う価値は高い。**特筆**: ESLint v10 互換 flat config（TS の `defineConfig`）の採用により、**本ライブラリの「型付き config オーサリング」資産（`defineConfig` / `RulesOptions` 型）を最も自然に引き継げる移行先**になった。oxlint（JSON 設定）に対する明確な優位点。
 
 ---
 
@@ -148,14 +157,14 @@
 
 ## 4. 比較表
 
-| ツール             | ESLint プラグイン互換 | syntactic カスタム | **type-aware カスタム** | flat config 相当 | 速度  | 成熟度 |             上位互換？              |
-| ------------------ | :-------------------: | :----------------: | :---------------------: | :--------------: | :---: | :----: | :---------------------------------: |
-| **oxlint / Vite+** |           ◎           |         ◎          |      **✗（WIP）**       |     ○(JSON)      |   ◎   |   ◎    | **ほぼ（type-aware カスタム除く）** |
-| rslint             |           △           |         ○          |            ○            |        △         |   ◎   |   ✗    |                  △                  |
-| tsslint            |           ✗           |         ○          |            ◎            |        ✗         |   ◎   |   ○    |                  ✗                  |
-| tsl                |       併用前提        |         ✗          |            ◎            |        ─         |   ◎   |   ○    |                補助                 |
-| Biome              |           ✗           |      △(Grit)       |            ✗            |        ○         |   ◎   |   ◎    |             ✗（却下済）             |
-| ESLint（現状）     |           ◎           |         ◎          |            ◎            |        ◎         | ✗遅い |   ◎    |                基準                 |
+| ツール             | ESLint プラグイン互換 | syntactic カスタム | **type-aware カスタム** |        flat config 相当        |  **bulk suppressions**   | 速度  | 成熟度 |             上位互換？              |
+| ------------------ | :-------------------: | :----------------: | :---------------------: | :----------------------------: | :----------------------: | :---: | :----: | :---------------------------------: |
+| **oxlint / Vite+** |           ◎           |         ◎          |      **✗（WIP）**       |            ○(JSON)             |     ✗（要望 #10549）     |   ◎   |   ◎    | **ほぼ（type-aware カスタム除く）** |
+| rslint             |         △〜○          |         ○          |            ○            | ◎（ESLint v10 互換 TS config） |            ✗             |   ◎   |   ✗    |                  △                  |
+| tsslint            |           ✗           |         ○          |            ◎            |               ✗                |            ✗             |   ◎   |   ○    |                  ✗                  |
+| tsl                |       併用前提        |         ✗          |            ◎            |               ─                |            ✗             |   ◎   |   ○    |                補助                 |
+| Biome              |           ✗           |      △(Grit)       |            ✗            |               ○                | △（inline 一括挿入のみ） |   ◎   |   ◎    |             ✗（却下済）             |
+| ESLint（現状）     |           ◎           |         ◎          |            ◎            |               ◎                |   **◎（唯一の対応）**    | ✗遅い |   ◎    |                基準                 |
 
 ---
 
@@ -241,7 +250,43 @@ config/ルールライブラリの価値の中心は、CLI 速度だけでなく
 
 ---
 
-## 7. 推奨移行戦略（段階的ハイブリッド）
+## 7. flat config の利点・bulk suppressions・エディタ負荷分散の評価
+
+> 利用者要件の再確認: 本ライブラリの利用形態は「提供される flat config を `eslint.config.mts` で import し、厳格過ぎる設定を off に上書きして使う」。ESLint flat config の **(1) ファイル分割・config 合成、(2) glob による適用対象定義の容易さ、(3) bulk suppressions による既存コードベースへの段階的導入** は手放したくない運用上の核心価値。加えて現場では **「有効ルールが多過ぎてエディタが重い → 重いルールを CLI 専用 config に分離」** という運用が既に発生しており、**エディタの即時エラー表示・auto-fix を保ったままの負荷分散**が現実の要求になっている。
+
+### 7.1 bulk suppressions 対応状況（2026-07）
+
+| ツール        | 対応                                                                                                                                                                                                                                             |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **ESLint**    | **◎ 唯一の本格対応**。v9.24（2025-04）で `--suppress-all` / `--suppress-rule` → `eslint-suppressions.json` を導入。**v10.1（2026-03）で API（`applySuppressions`）にも開放され、IDE（vscode-eslint 等）が suppression を反映できる**ようになった |
+| oxlint        | **✗ 未実装**。要望 Issue oxc#10549（2025-04 起票）が「Oxlint Q2」マイルストーンに載るが、2026-07 現在も担当者・実装 PR なし。現状は inline disable コメントのみ                                                                                  |
+| rslint        | ✗ ドキュメント上言及なし                                                                                                                                                                                                                         |
+| tsl / tsslint | ✗ inline ignore コメントのみ                                                                                                                                                                                                                     |
+| Biome         | △ `--suppress` で `biome-ignore` コメントを**インラインに一括挿入**する方式（コードが汚れる）。ESLint 式の別ファイル管理は Discussion 段階                                                                                                       |
+
+**含意**: 「厳格ルールを既存コードベースに入れて段階的に直す」というこのライブラリの推奨運用フローを支えられるのは、**現状 ESLint だけ**。→ **厳格な type-aware 群（このライブラリの核心 22 ルール＋typescript-eslint 厳格系）を ESLint に残す判断は、bulk suppressions の観点からも合理的**。逆に、oxlint に寄せる native / syntactic 群は「違反ゼロから運用開始できる基本ルール群」が中心なので、suppressions の必要性が相対的に低く、分担と噛み合う。oxlint の #10549 実装は Phase 3（完全移行）の追加トリガー条件として扱うべき。
+
+### 7.2 flat config の合成力・ファイル分割の維持
+
+- **ESLint（基準）**: ファイル分割・glob・型付き `defineConfig` すべて現状維持。
+- **oxlint**: `.oxlintrc.json` ＋ nested config（ディレクトリ単位）＋ `extends` で分割・継承は可能だが、**JSON なので「TS でロジックを書いて config を合成する」自由度はない**。本ライブラリとしては「TS で書いた設定から `.oxlintrc.json` を生成する」ジェネレータ層を持てば利点をある程度温存できる（§8 のリブランド論とも整合）。
+- **rslint**: **ESLint v10 互換 flat config を TS（`rslint.config.ts` + `defineConfig`）で採用**。`files`/`ignores` glob・entry 合成・projectService・monorepo nearest-config まで揃い、**「flat config の優秀さ」をほぼそのまま引き継げる唯一の代替ツール**。成熟すれば本ライブラリの提供形態（typed flat config の export）を最小変更で移せる。
+- **tsl / tsslint**: 独自 config（`tsl.config.ts` 等）。TS で型安全に書ける点は良いが ESLint flat config とは別物。
+
+### 7.3 「エディタが重い」問題への各構成の効き方
+
+現状の痛点は「ルール数が多い ESLint がエディタ内で重く、即時性が落ちる／保存時 fix が遅い」。評価:
+
+1. **oxlint 併用（推奨の主軸）**: ルール数の大半を占める syntactic 群（native 650+ 相当＋非 type-aware プラグイン群＋自作 syntactic 約18ルール）を oxlint LSP（Rust、独立プロセス）に移すと、**エディタ内の ESLint は「22 個の type-aware カスタム＋typescript-eslint 型系」だけの軽い config になり、即時エラー表示と保存時 auto-fix の体感が大きく改善**する。診断経路も oxlint LSP / vscode-eslint で分離され干渉しない。
+2. **エディタ用と CLI 用の config 分離は両ツールとも可能**: ESLint は従来どおり config を分ければよい（このライブラリが「editor 用サブセット config」を export する設計も可能）。oxlint は VSCode 拡張の `oxc.configPath` でエディタ専用 config を指定できる（LSP が configPath を無視する既知バグ #21311 には注意）。
+3. **oxlint 側の注意**: JS plugin ルールを保存時 fix に含めると CPU スパイクの報告（oxc-vscode #242、M4 Pro で 99%）。「native ルールのみ保存時 fix」のような粒度制御はまだ要望段階。→ **自作 syntactic ルールを oxlint JS plugin としてエディタでも回す場合は、保存時 fix の対象を絞る運用**が無難。
+4. **bulk suppressions とエディタの整合**: ESLint v10.1 の `applySuppressions` API により、**suppress 済みの既存違反はエディタでも表示されない**運用が可能になった。「厳格ルール導入 → エディタが既存違反で真っ赤」という導入時の DX 問題が解消されている点は、ESLint 継続の追い風。
+
+**結論（この軸）**: 「エディタの重さ」は移行の主目的である CLI 速度とは別の問題だが、**oxlint ハイブリッドはこの問題への直接的な解にもなる**（エディタ内 ESLint のルール数を 1/3 以下に削減）。逆に言えば、**完全移行を待たずとも Phase 1 の時点でエディタ体験の改善が得られる**。
+
+---
+
+## 8. 推奨移行戦略（段階的ハイブリッド）
 
 ### Phase 1 — oxlint 導入・共存（今すぐ着手可）
 
@@ -249,6 +294,7 @@ config/ルールライブラリの価値の中心は、CLI 速度だけでなく
 - native 650+ ルール＋非 type-aware プラグイン＋ **syntactic カスタムルール（約18個）**を oxlint JS plugin として移植。
 - typescript-eslint の type-aware ルールは oxlint の `--type-aware`（tsgolint、59/61 対応）に委譲。
 - ESLint はまだ残し、**oxlint = 高速な日常 lint / エディタ、ESLint = フルチェック**の二段構え。
+- **この時点でエディタ負荷問題が解消**（§7.3）: エディタ内の ESLint config を「type-aware カスタム 22＋型系」だけに絞り、残りは oxlint LSP へ。**「重いルールを CLI 送りにする」現行の分割運用を、「軽いルールを別ツール送りにする」構成に置き換える**イメージ。即時エラー表示・保存時 auto-fix は oxlint LSP / vscode-eslint の両方で維持される。
 
 ### Phase 2 — type-aware カスタムルールの受け皿を決定
 
@@ -257,12 +303,14 @@ config/ルールライブラリの価値の中心は、CLI 速度だけでなく
     - (b) **tsl / tsslint に移植**して ESLint を排除（型チェックの二重実行を避け高速化。**かつエディタ DX は現状より向上**。ただし API 書き換え工数が大きい）。
 - **DX を重視するなら (b) が本命**: oxlint（独立 LSP）＋ tsl/tsslint（tsserver 内）はエディタ内で競合せず二重報告も出ない。oxlint＋ESLint 併走はエディタで二重報告ノイズが出やすい。
 - ⚠️ **ただし TypeScript v7（tsgo）を見据えると (b) の選択肢は絞られる**（§6）: **tsslint は tsgo 非互換のため移植先から除外**。tsl も tsgo 対応が未定のため、tsl 移植は「tsl の tsgo 対応」を待つ条件付き。→ tsgo 前提では **(a) ESLint 併走で当面しのぎつつ、native-tsgo なカスタム type-aware（corsa-oxlint / rslint）の成熟を待つ**のが手堅い。
+- **bulk suppressions の観点も (a) を後押しする**（§7.1）: 厳格な type-aware 群こそ既存コードベース導入時に suppressions が必要になる領域だが、これを持つのは現状 ESLint のみ（v10.1 で IDE 反映にも対応）。(b) の tsl / tsslint に移すと段階的導入の仕組みごと失う。
 - oxlint の内蔵 type-aware で代替可能なもの（例: `no-unnecessary-type-guard` 相当）は oxlint 側に寄せて自作ルールを削減。
 
 ### Phase 3 — 完全移行（トリガー待ち）
 
 - oxlint のカスタム type-aware ルール API（`corsa-oxlint`）が stable 化 → 22ルールを oxlint に移植 → **ESLint を完全撤去**。ここで初めて「単一ツールでの上位互換」達成。
-- 同時に **rslint** の成熟度も再評価（type-aware カスタムを最初からサポートするため、こちらが先に実用化する可能性もある）。
+- **完全撤去の追加条件**: ESLint を消すと bulk suppressions も一緒に失われるため、**oxlint の suppressions ファイル対応（oxc#10549、Q2 マイルストーン）の実装**もトリガー条件に含めるべき（§7.1）。
+- 同時に **rslint** の成熟度も再評価（type-aware カスタムを最初からサポートし、**ESLint v10 互換 flat config を TS で書ける**ため、本ライブラリの提供形態を最も保てる受け皿。こちらが先に実用化する可能性もある）。
 
 ### ライブラリとしての `eslint-config-typed` の扱い
 
@@ -271,14 +319,15 @@ config/ルールライブラリの価値の中心は、CLI 速度だけでなく
 
 ---
 
-## 8. まとめ
+## 9. まとめ
 
 - **「完全上位互換の単一ツール」は 2026-07 現在まだ無い。** 唯一の関門は本ライブラリの **22 個の type-aware カスタムルール**。
 - **oxlint（Vite+）が最有力**。MIT で無償、ESLint プラグインをほぼ無改造で動かせ、syntactic カスタムルールも書け、速度は圧倒的。エディタ拡張も成熟（9.6万+ installs、LSP・保存時 fix・config 補完）。**唯一足りないのがカスタム type-aware ルール**で、これは公式ロードマップ上の WIP（`corsa-oxlint`）。
 - **DX を加味すると結論が一段はっきりする**: 22 ルールは oxlint ではエディタ上でもフィードバックが出ない一方、**tsl / tsslint は tsserver 内で動くため、その領域で現状 ESLint を上回るリアルタイム体験**を出せる。よって「純粋な現在の DX」だけならハイブリッドの型担当は「ESLint 併走」より「tsl/tsslint への移植」が上位。
 - **ただし TypeScript v7（tsgo）前方互換性を加味すると結論が動く（§6）**: TS7 は tsserver プラグイン API（Strada）を引き継がないため **tsslint は TS7 非互換（行き止まり）**、tsl も現状 JS の TS API 依存で tsgo 対応は未定。一方 **oxlint（type-aware = tsgolint）と rslint は typescript-go ネイティブ**。→ 将来まで見据えた型担当の受け皿は「tsslint/tsl 移植」ではなく **native-tsgo 側（corsa-oxlint / rslint）**が本命。
 - 現実解は **oxlint 主軸 ＋ 当面 ESLint を型 lint の受け皿として併走**させて即座に大幅高速化し、**native-tsgo なカスタム type-aware（oxlint の corsa-oxlint / rslint）の実用化をトリガーに完全移行**するのが最善。DX 最優先で tsl 移植を狙う場合も、tsl 側の tsgo 対応が前提。
-- **rslint** はカスタム type-aware を最初から狙い、かつ **typescript-go ネイティブ**な点で TS7 時代に本命化する可能性があり、oxlint と並行してウォッチ推奨。
+- **flat config・bulk suppressions・エディタ負荷の観点（§7）**: bulk suppressions を持つのは現状 **ESLint のみ**（v10.1 で IDE 反映まで対応）で、厳格 type-aware 群を ESLint に残す判断を後押しする。**エディタが重い問題は、Phase 1 の oxlint 併用時点で解消可能**（syntactic 群を oxlint LSP に退避し、エディタ内 ESLint を type-aware 中心の軽い config に絞る。`oxc.configPath` でエディタ/CLI の config 分離も可能）。
+- **rslint** はカスタム type-aware を最初から狙い、**typescript-go ネイティブ**、かつ **ESLint v10 互換 flat config を TS（`defineConfig`）で書ける**点で、本ライブラリの提供形態（typed flat config）を最も保てる将来の受け皿。TS7 時代に本命化する可能性があり、oxlint と並行してウォッチ推奨。
 
 ---
 
@@ -307,3 +356,12 @@ config/ルールライブラリの価値の中心は、CLI 速度だけでなく
 - rslint（typescript-go 製の ESLint 互換 linter）: <https://github.com/web-infra-dev/rslint>
 - Rslint 紹介記事（Socket）: <https://socket.dev/blog/rspack-introduces-rslint-a-typescript-first-linter-written-in-go>
 - TSSLint 3.0（tsserver プラグイン方式・TS7 非互換の背景）: <https://www.infoq.com/news/2026/02/tsslint-3-release-final/>
+- ESLint Bulk Suppressions（公式ドキュメント）: <https://eslint.org/docs/latest/use/suppressions>
+- Introducing bulk suppressions（ESLint blog、v9.24）: <https://eslint.org/blog/2025/04/introducing-bulk-suppressions/>
+- ESLint v10.1.0（bulk suppressions の API/IDE 対応）: <https://eslint.org/blog/2026/03/eslint-v10.1.0-released/>
+- oxlint への suppressions ファイル要望（oxc Issue #10549、Q2 マイルストーン）: <https://github.com/oxc-project/oxc/issues/10549>
+- oxlint 設定リファレンス（nested config / extends）: <https://oxc.rs/docs/guide/usage/linter/config>
+- oxc-vscode「native ルールのみ保存時 fix」要望（CPU スパイク報告）: <https://github.com/oxc-project/oxc-vscode/issues/242>
+- oxlint LSP が configPath を無視するバグ報告: <https://github.com/oxc-project/oxc/issues/21311>
+- rslint Configuration（ESLint v10 互換 flat config・TS `defineConfig`）: <https://rslint.rs/config/>
+- Biome の suppressions ファイル要望（Discussion #8691）: <https://github.com/biomejs/biome/discussions/8691>
