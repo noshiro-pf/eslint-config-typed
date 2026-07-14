@@ -4,15 +4,25 @@ allowCompoundWords: true
 caseSensitive: false
 ignoreRandomStrings: true
 words:
+  - arnaud
+  - auvred
   - bivariant
   - blueprintjs
+  - corsa
+  - johnsoncodehk
   - klass
   - noshiro
+  - oxlint
+  - oxlintrc
   - pikachu
+  - rslint
+  - rstack
   - sindresorhus
   - testw
   - tscw
   - tses
+  - tsgolint
+  - tsslint
   - tsutils
   - unshifted
 ignorePaths:
