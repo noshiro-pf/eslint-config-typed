@@ -14,6 +14,7 @@
 - **oxlint（＝Vite+ の linter）** は最有力候補で、ESLint 互換 JS プラグイン API・flat config 移行ツール・50〜100倍の速度を備え、**syntactic なカスタムルールは移植可能**。しかし **カスタム type-aware ルールは 2026-07 現在も未サポート**（明示された既知の制約）。→ 22 個の type-aware カスタムルールが今は移植不能。
 - **rslint / tsslint / tsl** はカスタム type-aware ルールを書けるが、**既存 ESLint プラグインエコシステムをそのまま動かせない**（＝上位互換ではない）か、実験的段階。
 - **VSCode DX を加味すると**: 22 個の type-aware カスタムルールは oxlint ではエディタでもフィードバックが出ない。逆に **tsl / tsslint は tsserver 内で動くため、その領域でむしろ現状 ESLint より優れたリアルタイム体験**を出せる。→ ハイブリッドの型担当は「tsl/tsslint 移植」が DX 上位（ただし移植工数は大）。詳細は §5。
+- **TypeScript v7（tsgo）を見据えると結論が動く**: TS7 は tsserver プラグイン API（Strada）を引き継がないため **tsslint は TS7 で非互換（行き止まり）**、tsl も現状 JS の TS API 依存で tsgo 対応は未定。一方 **oxlint（type-aware = tsgolint）と rslint は typescript-go ネイティブ**。→ 型担当の将来の受け皿は「tsslint/tsl 移植」より **native-tsgo 側（oxlint の corsa / rslint）**が本命。詳細は §6。
 
 ### 推奨方針
 
@@ -63,6 +64,7 @@
 6. **成熟度・後ろ盾・エコシステム**
 7. 型付き config オーサリングの引き継ぎ
 8. **VSCode 拡張の開発体験（DX）** — リアルタイム診断 / エディタでの type-aware / カスタムルール開発の反復ループ ← ルールライブラリでは特に重要
+9. **TypeScript v7（tsgo / typescript-go）前方互換性** — 型情報エンジンが TS7 ネイティブか／将来動くか ← 型 lint の将来性に直結（詳細は §6）
 
 ---
 
@@ -118,7 +120,7 @@
 | 速度                      | ◎（型チェックを二重に走らせない設計）                                                            |
 | 成熟度                    | ○                                                                                                |
 
-**判定**: **設計思想は本ライブラリの type-aware カスタムルールと極めて相性が良い**が、ESLint プラグイン資産を捨てることになる。単独移行先にはならない。ただし **「type-aware カスタムルールだけを高速に回す補助エンジン」**としては有力。
+**判定**: **設計思想は本ライブラリの type-aware カスタムルールと極めて相性が良い**が、ESLint プラグイン資産を捨てることになる。単独移行先にはならない。ただし **「type-aware カスタムルールだけを高速に回す補助エンジン」**としては有力。⚠️ **ただし TypeScript v7（tsgo）とは非互換**（tsserver プラグイン方式に依存し、tsgo は Strada プラグイン API を持たない見込み）。TS7 移行を見据える限り、22 ルールの移植先としては将来性がない。詳細は §6。
 
 ---
 
@@ -126,7 +128,7 @@
 
 **位置づけ**: `tsc` を拡張した type-aware linter。**oxlint / Biome のような「型を扱えず・カスタムルール API も無い高速 linter」と併用する前提**で設計されている（単独/ESLint 併用も可）。tsslint と歴史を共有。
 
-**判定**: **oxlint とのハイブリッド構成の「型担当」として設計思想が完全に一致。** oxlint（高速な syntactic + 内蔵 type-aware）＋ tsl（独自 type-aware カスタムルール）という組み合わせは、本件の移行戦略の有力な受け皿。
+**判定**: **oxlint とのハイブリッド構成の「型担当」として設計思想が完全に一致。** oxlint（高速な syntactic + 内蔵 type-aware）＋ tsl（独自 type-aware カスタムルール）という組み合わせは、本件の移行戦略の有力な受け皿。⚠️ **ただし TypeScript v7（tsgo）対応は未確定**。現状は JS の TS API（peer dep TS ≥5.8）に依存し、作者も「language service 統合を IPC でどう実現するか調査中／効率化には主要ルールの Go 移植が必要そう」と述べている。tsslint と違い自前で舵を切れる余地はあるが、tsl 移植を選ぶ場合は **tsl 自身の tsgo 対応がトリガー条件**になる。詳細は §6。
 
 ---
 
@@ -203,7 +205,43 @@ config/ルールライブラリの価値の中心は、CLI 速度だけでなく
 
 ---
 
-## 6. 推奨移行戦略（段階的ハイブリッド）
+## 6. TypeScript v7（tsgo / typescript-go）との相性評価
+
+> TS 7 = TypeScript コンパイラの **Go ネイティブ移植（コードネーム Project Corsa）**。`tsgo`（`@typescript/native-preview`）として配布され、tsc 比 **7.5〜10 倍**の型チェック速度・大幅な低メモリ・**LSP 内蔵**（`tsgo --lsp`）。本ライブラリの 22 個の type-aware ルールは「型情報エンジン」に強く依存するため、**各ツールが tsgo の上で動くか／将来動けるか**は移行先選定の決定的な軸になる。
+
+### tsgo が linter に与える構造的インパクト
+
+- **最重要**: 従来の JS ベース Language Service / **tsserver プラグイン API（コードネーム Strada）は TS7 に引き継がれない**。tsgo 用の新しいプログラム API は設計中で、2026-07 現在も未完成。→ **「tsserver プラグイン方式で既存の TypeChecker を再利用する」設計のツールは TS7 で原理的に動かなくなる。**
+- 逆に、**最初から typescript-go を直接叩くネイティブ Go 実装**（tsgolint / rslint）は、TS7 の恩恵（速度・低メモリ）を最も素直に受ける。tsgo は TS7 世代のアーキテクチャそのもの。
+- ESLint / typescript-eslint 系は JS の TS API に依存し続けるため、**プロジェクトの `tsc` を tsgo に置き換えても、型 lint だけは当面「遅い JS 版 TS」を引きずる**構造になる。
+
+### tsgo 相性 比較表
+
+| ツール                              | tsgo との関係                                                                                           | TS7 対応状況                                                                                                                                                                |              相性              |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------: |
+| **oxlint（type-aware = tsgolint）** | type-aware エンジン **tsgolint が typescript-go 上に構築**。Rust の oxlint 本体が Go の tsgolint を呼ぶ | **すでに tsgo ネイティブ**（内蔵 type-aware は tsgo 上で動作。61 中 59 ルール対応）                                                                                         |        ◎ 前方互換の本命        |
+| **rslint**                          | **本体が typescript-go 製**（tsgolint の fork、typescript-go を「コア」に据える）                       | **tsgo ネイティブ**。TS7 世代アーキテクチャそのもの                                                                                                                         |      ◎（ただし実験段階）       |
+| **tsl**                             | 現状 `tsc`（JS の TS API、peer dep TS ≥5.8）に依存                                                      | **未対応**。作者は「language service 統合を IPC でどう実現するか調査中／効率化には主要ルールの Go 移植が必要そう」と明言                                                    |    △ 要ポーティング・不透明    |
+| **tsslint**                         | **tsserver プラグイン方式**で動作                                                                       | **非互換**。tsgo は Strada プラグイン API を（おそらく恒久的に）持たない。作者自身が「tsgo はそのレベルのプラグイン対応をおそらく持たない」と発言                           |       ✗ TS7 で行き止まり       |
+| **ESLint + typescript-eslint**      | JS の TS API 経由で型取得                                                                               | 対応作業中（Issue #10940、Project Service で下地）だが **stable は数ヶ月〜1〜2 メジャー先**。ESLint の async parser 非対応・tsgo の WASM async バインディング・直列化が障壁 | △ 近い将来は非ネイティブのまま |
+| **Biome**                           | 独自型推論（Biotype）。TS コンパイラを使わない                                                          | tsgo 無関係（そもそも TS の型を使わない）                                                                                                                                   |          ─（却下済）           |
+
+### 本ライブラリにとっての含意（重要 — §5 の結論を修正する）
+
+1. **tsslint は TS7 で行き止まり。** §5 で「型担当の DX 最良」と評価した tsslint の魅力（tsserver 内で TypeChecker を共有）は、**まさにその tsserver プラグイン依存ゆえに TS7 で失われる**。tsgo 移行を見据えるなら、**22 ルールの移植先として tsslint を選ぶのは将来性の観点で不可**。ユーザー観測（tsslint 非互換）と一致する。
+2. **tsl も無条件では選べない。** 現状は JS の TS API 依存で、tsgo 対応は作者も「調査中」。oxlint＋tsl ハイブリッドの「型担当」は、TS7 時代には **tsl 側の tsgo 対応が前提条件**になる。tsslint より自前で舵を切れる余地はある（Go 移植を検討中）が、時期は不透明。
+3. **oxlint と rslint だけが「TS7 ネイティブ」。** oxlint の type-aware（tsgolint 経由）と rslint は typescript-go を直接使う。→ **TS7 の到来は oxlint 主軸戦略を強化し、type-aware カスタムルールの将来の受け皿を「tsslint/tsl 移植」から「oxlint のカスタム type-aware API（corsa-oxlint）／ rslint」へと傾ける。**
+4. **ESLint 併走の隠れコスト。** 22 ルールを ESLint に残す案（§後述 Phase 2 の (a)）は書き換えゼロで安全だが、**プロジェクトが `tsc`→tsgo に移行しても型 lint だけは JS 版 TS を使い続ける**ため、「全体を native 化しても型 lint がボトルネックとして残る」構図になる点に注意。
+
+### 推奨方針への反映
+
+- **tsgo を前提に置くと、type-aware カスタム 22 ルールの受け皿から「tsslint 移植」は外すべき**（TS7 非互換）。
+- 現実的な二択は **(a) 当面 ESLint 併走（型 lint は非ネイティブのまま許容）** か **(b) oxlint の corsa-oxlint / rslint の成熟を待って native-tsgo 側へ一気に寄せる**。DX 重視で tsl 移植を狙う場合も、**tsl 自身の tsgo 対応がトリガー条件**になる。
+- 結論として、**「oxlint 主軸 ＋ ESLint を型 lint の当面の受け皿にしつつ、native-tsgo なカスタム type-aware（corsa-oxlint / rslint）の実用化を待つ」**のが、TS7 時代まで見据えた最も筋の良い経路。§5 の DX 評価だけなら tsslint/tsl が魅力的だったが、**tsgo 前方互換性を加味すると tsslint は脱落し、tsl は条件付きになる。**
+
+---
+
+## 7. 推奨移行戦略（段階的ハイブリッド）
 
 ### Phase 1 — oxlint 導入・共存（今すぐ着手可）
 
@@ -218,6 +256,7 @@ config/ルールライブラリの価値の中心は、CLI 速度だけでなく
     - (a) ESLint を CI/pre-commit で継続併走（**移行コスト最小・最も安全**。ただしエディタでの type-aware は遅いまま）、または
     - (b) **tsl / tsslint に移植**して ESLint を排除（型チェックの二重実行を避け高速化。**かつエディタ DX は現状より向上**。ただし API 書き換え工数が大きい）。
 - **DX を重視するなら (b) が本命**: oxlint（独立 LSP）＋ tsl/tsslint（tsserver 内）はエディタ内で競合せず二重報告も出ない。oxlint＋ESLint 併走はエディタで二重報告ノイズが出やすい。
+- ⚠️ **ただし TypeScript v7（tsgo）を見据えると (b) の選択肢は絞られる**（§6）: **tsslint は tsgo 非互換のため移植先から除外**。tsl も tsgo 対応が未定のため、tsl 移植は「tsl の tsgo 対応」を待つ条件付き。→ tsgo 前提では **(a) ESLint 併走で当面しのぎつつ、native-tsgo なカスタム type-aware（corsa-oxlint / rslint）の成熟を待つ**のが手堅い。
 - oxlint の内蔵 type-aware で代替可能なもの（例: `no-unnecessary-type-guard` 相当）は oxlint 側に寄せて自作ルールを削減。
 
 ### Phase 3 — 完全移行（トリガー待ち）
@@ -232,13 +271,14 @@ config/ルールライブラリの価値の中心は、CLI 速度だけでなく
 
 ---
 
-## 7. まとめ
+## 8. まとめ
 
 - **「完全上位互換の単一ツール」は 2026-07 現在まだ無い。** 唯一の関門は本ライブラリの **22 個の type-aware カスタムルール**。
 - **oxlint（Vite+）が最有力**。MIT で無償、ESLint プラグインをほぼ無改造で動かせ、syntactic カスタムルールも書け、速度は圧倒的。エディタ拡張も成熟（9.6万+ installs、LSP・保存時 fix・config 補完）。**唯一足りないのがカスタム type-aware ルール**で、これは公式ロードマップ上の WIP（`corsa-oxlint`）。
-- **DX を加味すると結論が一段はっきりする**: 22 ルールは oxlint ではエディタ上でもフィードバックが出ない一方、**tsl / tsslint は tsserver 内で動くため、その領域で現状 ESLint を上回るリアルタイム体験**を出せる。よってハイブリッドの型担当は「ESLint 併走」より「tsl/tsslint への移植」が DX 上位。
-- 現実解は **oxlint 主軸 ＋ tsl/tsslint による type-aware カスタム併走**（移行コスト最小を優先するなら当面 ESLint 併走）で即座に大幅高速化し、oxlint のカスタム type-aware 対応をトリガーに完全移行するのが最善。
-- **rslint** はカスタム type-aware を最初から狙う点で本命化する可能性があり、oxlint と並行してウォッチ推奨。
+- **DX を加味すると結論が一段はっきりする**: 22 ルールは oxlint ではエディタ上でもフィードバックが出ない一方、**tsl / tsslint は tsserver 内で動くため、その領域で現状 ESLint を上回るリアルタイム体験**を出せる。よって「純粋な現在の DX」だけならハイブリッドの型担当は「ESLint 併走」より「tsl/tsslint への移植」が上位。
+- **ただし TypeScript v7（tsgo）前方互換性を加味すると結論が動く（§6）**: TS7 は tsserver プラグイン API（Strada）を引き継がないため **tsslint は TS7 非互換（行き止まり）**、tsl も現状 JS の TS API 依存で tsgo 対応は未定。一方 **oxlint（type-aware = tsgolint）と rslint は typescript-go ネイティブ**。→ 将来まで見据えた型担当の受け皿は「tsslint/tsl 移植」ではなく **native-tsgo 側（corsa-oxlint / rslint）**が本命。
+- 現実解は **oxlint 主軸 ＋ 当面 ESLint を型 lint の受け皿として併走**させて即座に大幅高速化し、**native-tsgo なカスタム type-aware（oxlint の corsa-oxlint / rslint）の実用化をトリガーに完全移行**するのが最善。DX 最優先で tsl 移植を狙う場合も、tsl 側の tsgo 対応が前提。
+- **rslint** はカスタム type-aware を最初から狙い、かつ **typescript-go ネイティブ**な点で TS7 時代に本命化する可能性があり、oxlint と並行してウォッチ推奨。
 
 ---
 
@@ -261,3 +301,9 @@ config/ルールライブラリの価値の中心は、CLI 速度だけでなく
 - oxlint エディタ設定ガイド: <https://oxc.rs/docs/guide/usage/linter/editors>
 - oxlint type-aware 診断の stale バグ（Issue）: <https://github.com/oxc-project/oxc-vscode/issues/19>
 - TSSLint VSCode 拡張（Marketplace）: <https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.vscode-tsslint>
+- TypeScript-Go（TS7 ネイティブ移植・Project Corsa）: <https://github.com/microsoft/typescript-go>
+- typescript-eslint「tsgo で型情報を使う」Enhancement Issue #10940: <https://github.com/typescript-eslint/typescript-eslint/issues/10940>
+- typescript-eslint/tsgolint（tsgo powered PoC）: <https://github.com/typescript-eslint/tsgolint>
+- rslint（typescript-go 製の ESLint 互換 linter）: <https://github.com/web-infra-dev/rslint>
+- Rslint 紹介記事（Socket）: <https://socket.dev/blog/rspack-introduces-rslint-a-typescript-first-linter-written-in-go>
+- TSSLint 3.0（tsserver プラグイン方式・TS7 非互換の背景）: <https://www.infoq.com/news/2026/02/tsslint-3-release-final/>
