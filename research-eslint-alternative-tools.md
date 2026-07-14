@@ -17,6 +17,7 @@
 - **TypeScript v7（tsgo）を見据えると結論が動く**: TS7 は tsserver プラグイン API（Strada）を引き継がないため **tsslint は TS7 で非互換（行き止まり）**、tsl も現状 JS の TS API 依存で tsgo 対応は未定。一方 **oxlint（type-aware = tsgolint）と rslint は typescript-go ネイティブ**。→ 型担当の将来の受け皿は「tsslint/tsl 移植」より **native-tsgo 側（oxlint の corsa / rslint）**が本命。詳細は §6。
 - **flat config の運用上の利点（ファイル分割・glob・bulk suppressions）を軸に据えると**: **bulk suppressions（`eslint-suppressions.json`）を持つのは 2026-07 現在 ESLint だけ**（oxlint は Issue #10549 でロードマップ入りだが未実装）。また **rslint が ESLint v10 互換の flat config（TS の `defineConfig`）を採用**したことで、本ライブラリの型付き config 資産が最も自然に引き継げる移行先は rslint になった。詳細は §7。
 - **「エディタが重い」問題への現実解**: ルール数の大半（syntactic 群）を oxlint LSP に退避すればエディタの ESLint 負荷は激減し、**oxlint は `oxc.configPath` でエディタ用/CLI 用の config を分離できる**。ESLint 側も v10.1 で bulk suppressions が IDE に反映されるようになった。詳細は §7。
+- **ルール分類（用途ラベル・重複検出）の観点では、どのツールも本ライブラリの課題を解いていない**: 用途ラベルの本格実装は Biome domains のみ、構文ベースの重複検出は皆無。理想は「ルール = manifest 付きデータ、config = クエリ」で、まず **ESLint 上のメタレイヤ（本ライブラリの進化形）として実装するのが最短**。TS7 の type-aware ルール全書き直しは manifest 規約を業界標準に仕込める好機でもある。詳細は §8。
 
 ### 推奨方針
 
@@ -269,7 +270,7 @@ config/ルールライブラリの価値の中心は、CLI 速度だけでなく
 ### 7.2 flat config の合成力・ファイル分割の維持
 
 - **ESLint（基準）**: ファイル分割・glob・型付き `defineConfig` すべて現状維持。
-- **oxlint**: `.oxlintrc.json` ＋ nested config（ディレクトリ単位）＋ `extends` で分割・継承は可能だが、**JSON なので「TS でロジックを書いて config を合成する」自由度はない**。本ライブラリとしては「TS で書いた設定から `.oxlintrc.json` を生成する」ジェネレータ層を持てば利点をある程度温存できる（§8 のリブランド論とも整合）。
+- **oxlint**: `.oxlintrc.json` ＋ nested config（ディレクトリ単位）＋ `extends` で分割・継承は可能だが、**JSON なので「TS でロジックを書いて config を合成する」自由度はない**。本ライブラリとしては「TS で書いた設定から `.oxlintrc.json` を生成する」ジェネレータ層を持てば利点をある程度温存できる（§9 のリブランド論とも整合）。
 - **rslint**: **ESLint v10 互換 flat config を TS（`rslint.config.ts` + `defineConfig`）で採用**。`files`/`ignores` glob・entry 合成・projectService・monorepo nearest-config まで揃い、**「flat config の優秀さ」をほぼそのまま引き継げる唯一の代替ツール**。成熟すれば本ライブラリの提供形態（typed flat config の export）を最小変更で移せる。
 - **tsl / tsslint**: 独自 config（`tsl.config.ts` 等）。TS で型安全に書ける点は良いが ESLint flat config とは別物。
 
@@ -286,7 +287,143 @@ config/ルールライブラリの価値の中心は、CLI 速度だけでなく
 
 ---
 
-## 8. 推奨移行戦略（段階的ハイブリッド）
+## 8. ルール分類・メタデータ管理の設計思想比較 ＋「理想の TypeScript linter」考察
+
+> 本ライブラリの内部実装が抱える構造的な課題からの問い: **ルールの「分類」は誰の責務か。** 現状の linter framework はこれを preset 作者の手作業に外部化しており、本ライブラリはまさにそのコストを払い続けている。
+
+### 8.1 問題の定式化 — 本ライブラリの現状から
+
+本ライブラリは用途別の事前定義 config（`nodejs` / `browser` / `react` / `preact` / `playwright` / `vitest` / `jest` / `cypress` / `testing-library` / `immer` …）を提供するが、その実体は**ルール名の手書きリスト**である。例えば `src/configs/nodejs.mts` は unicorn の DOM 系ルール約 30 個（`unicorn/prefer-dom-node-append`, `unicorn/no-document-cookie`, …）を**個別に列挙して off** にしている。型定義は `scripts/gen-eslint-rules` で plugin から自動生成されるのに対し、**「このルールはどの環境向けか」という分類だけは機械可読な情報源が存在せず、人手で維持するしかない**。
+
+これにより発生しているコスト:
+
+1. **分類の追従コスト**: 依存 plugin の更新で新ルールが増えるたび、「browser 専用か？ Node で意味があるか？ test 専用か？」を人が判定してリストに追記。漏れると「Node コードに DOM ルールが発火」等として顕在化する。
+2. **重複ルールの管理コスト**: 同じ構文を検査するルールの重複（例: core `no-unused-vars` vs `@typescript-eslint/no-unused-vars`、core vs `unicorn` の同型ルール、stylistic 系 vs formatter）は、**片方を人が off にする**ことでしか解消できない。どのルール同士が重複しているかの機械可読な情報がない。
+
+欠けている機構は 2 つに整理できる:
+
+- **A. 用途ラベル機構** — 「このルールは browser 向け / Node 向け / React 向け / テストコード向け」というラベルをルール自身のメタデータとして持ち、config を「ラベルへのクエリ」として定義できること。
+- **B. 検査対象構文による自動分類機構** — ルールが検査する AST ノード種別（＋型情報の要否）を機械的に取得でき、それに基づいて**重複・競合候補を自動検出**できること。
+
+### 8.2 既存ツールのルール分類機構の比較
+
+| ツール                 | 分類機構                                                                                                                     | A. 用途ラベル                                                                                                           | B. 構文による分類・重複検出                                     |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| **ESLint**             | rule `meta`（`type`: problem/suggestion/layout、`fixable`、`hasSuggestions`、`deprecated`/`replacedBy`、`docs.recommended`） | ✗ なし。「環境」は plugin の切り方と preset の手作業に外部化                                                            | ✗ なし（listener の introspection は技術的には可能 — 8.4 参照） |
+| typescript-eslint      | `meta.docs.extendsBaseRule` — **base rule を置換する extension rule の機械可読宣言**                                         | ✗                                                                                                                       | △ 「置換関係」に限れば宣言あり（重複管理の最重要先行例）        |
+| **Biome（v2）**        | groups（correctness/style/suspicious/…）＋ **domains（react / next / solid / test / project …）**                            | **◎ domains がまさに用途ラベル**。package.json の依存検出で該当 domain のルールを**自動有効化**、domain 固有 globals も | ✗                                                               |
+| **oxlint**             | categories（correctness/suspicious/pedantic/perf/style/restriction/nursery）× plugin 名前空間（react/jest/unicorn/…）の 2 軸 | △ plugin 名前空間が疑似ラベル（react 系を一括 on/off は可能）。依存からの自動有効化はなし                               | ✗                                                               |
+| deno lint              | tags（recommended / react / jsx / fresh …）                                                                                  | △ tag = 簡易ラベル                                                                                                      | ✗                                                               |
+| rslint                 | presets（recommended 等）                                                                                                    | ✗（現状。ただし TS config なのでメタデータ層を載せる余地は大きい）                                                      | ✗                                                               |
+| eslint-config-prettier | —（参考: formatter と競合する stylistic ルールの **手動メンテリスト**）                                                      | —                                                                                                                       | ✗ 重複管理が人手であることの象徴的存在                          |
+
+**観察**:
+
+- **A（用途ラベル）は Biome domains が唯一の本格実装**。「rule にラベルを持たせ、依存検出で自動適用」はユーザーの構想とほぼ同型で、**需要と実装可能性の実証例**になっている。ただし Biome はカスタムルール拡張性がない（§3.5）ため、本ライブラリの用途には接ぎ木できない。
+- **B（構文による自動分類・重複検出）はどのツールも持たない**。全 linter が「ルール名という不透明な文字列」を config の単位にしており、ルールの中身（何を見るか）は実行するまで分からない。typescript-eslint の `extendsBaseRule` が「置換関係の宣言」という形で部分解を示しているのみ。
+- つまりユーザーの構想する機構は**既存ツールの延長線上にありつつ、どこにも完全な形では存在しない**。
+
+### 8.3 理想の TypeScript linter の設計スケッチ
+
+コア思想: **「ルールはメタデータ（manifest）を持つデータであり、config はメタデータへのクエリである」**。ルール名の列挙（外延的定義）をやめ、述語による選択（内包的定義）に置き換える。
+
+**(1) Rule Manifest — ルールが自己記述する**
+
+```ts
+export const rule = defineRule({
+  name: 'prefer-dom-node-append',
+  // A. 用途ラベル（多値）
+  targets: ['browser'], // 'node' | 'browser' | 'universal' | 'deno' | ...
+  frameworks: [], // 'react' | 'vue' | ... / テスト系: 'vitest' | 'playwright' | ...
+  // B. 検査対象の宣言（検証可能 — (3) 参照）
+  syntax: {
+    nodes: ['CallExpression', 'MemberExpression'],
+    typeInfo: 'none', // 'none' | 'checker' | 'cross-module'
+  },
+  // 重複・置換関係の宣言
+  relations: {
+    supersedes: [], // これを on にしたら自動 off にすべきルール
+    overlapsWith: [], // 同一構文を検査する既知の隣接ルール（警告用）
+  },
+  fix: 'safe', // 'none' | 'safe' | 'unsafe'
+  stability: 'stable', // 'nursery' | 'stable' | 'deprecated'
+  profiles: { recommended: 'error', strict: 'error' },
+  create: (ctx) => ({ ... }),
+});
+```
+
+**(2) config はクエリ — 分類の追従コストが構造的に消える**
+
+```ts
+export default defineConfig([
+    {
+        files: ['src/**'],
+        rules: query()
+            .targets('node', 'universal') // browser 専用ルールは選択されない
+            .stability('stable')
+            .profile('strict'),
+    },
+    {
+        files: ['**/*.test.mts'],
+        rules: query().frameworks('vitest').profile('recommended'),
+    },
+]);
+```
+
+- plugin 更新で新ルールが来ても、**ラベルが付いていれば自動的に正しい preset に編入される**。preset 作者（＝本ライブラリ）の仕事は「リストの手書き追従」から「ラベルの監査」に変わる。
+- 再現性は lockfile 的な **rule snapshot** で担保: クエリの解決結果を snapshot に固定し、`lint rules diff` が「今回の更新で strict preset に入る新ルール（ラベル付き）」を差分表示 → レビューして commit。**自動編入と明示的レビューの両立**。
+- 環境の**自動検出**も Biome domains 式に可能: package.json の依存に加え、**tsconfig の `lib` に `DOM` が含まれるか**（browser/node 判定として最も信頼できる情報源）、`jsx` 設定、`engines` などから `targets` を推定してデフォルト適用。
+
+**(3) メタデータの機械検証 — 自己申告を腐らせない**
+
+ラベルは信頼できなければ意味がないので、framework が検証を担う:
+
+- `syntax.nodes` は**実測で検証可能**: ルールの visitor 登録キーは introspection で取得でき（ESLint 互換 API なら `rule.create(proxyContext)` で listener キーを収集するだけ）、さらにルールの**テストフィクスチャ実行時に実際に報告が出たノード種別を記録**して宣言と突合できる。乖離があれば publish 時に CI で fail。
+- `targets` の完全自動検証は不可能だが、ヒューリスティック（DOM API 名・`node:` import・グローバル参照の検出）で「browser ラベルなしに DOM API を検査しているルール」を警告する程度は機械化できる。
+
+**(4) 重複・競合の自動検出 — 完全自動化はせず「候補検出は自動、確定は宣言」**
+
+- config 解決時に、(a) `supersedes` 宣言からの**自動 off**（typescript-eslint の extension rule パターンの一般化 — `@ts/no-unused-vars` を on にすると core 側が自動で消える）、(b) **同一ノード集合に fixer を持つルールの組**を競合候補として警告（「A と B はどちらも `ArrowFunctionExpression` を書き換えます」）。
+- 意味論レベルの重複（同じ意図を別構文で検査する）はノード集合の一致より深いので、完全自動判定は原理的に不可能。**検出は自動・解消は `supersedes`/`overlapsWith` 宣言**という二段構えが現実的な上限。
+
+**(5) 実行アーキテクチャ — メタデータが負荷分散も駆動する**
+
+`syntax.typeInfo` メタデータから、ルールは自動で実行 tier に振り分けられる:
+
+- `none` → native/syntactic tier（エディタ LSP で常時実行）
+- `checker` → 型 tier（tsgo 上、エディタでは on-demand / CLI では常時）
+- `cross-module` → プロジェクト解析 tier（CI 中心）
+
+§7.3 で論じた「エディタ用/CLI 用の config 手動分割」が、**メタデータ駆動で自動化**される。「エディタが重い」問題は config 運用ではなく framework の責務になる。
+
+### 8.4 実現経路の比較 — 既存ツール拡張 vs 全ルール再実装
+
+| 経路                                                 | 内容                                                                                         | 工数       | エコシステム互換     | 判定                           |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------- | ---------- | -------------------- | ------------------------------ |
+| **A. ESLint 上のメタレイヤ**（本ライブラリの進化形） | エンジン非改変。plugin を ingest してメタデータ registry を自前構築、クエリ→flat config 生成 | 小〜中     | ◎ 全 plugin そのまま | **短期の本命**                 |
+| **B. 高速ツールへの上流貢献**                        | oxlint（corsa plugin API 設計中）/ rslint（TS config）に manifest 仕様を提案                 | 中（交渉） | ○                    | 中期。タイミングが今           |
+| **C. フル再実装（理想の linter を作る）**            | エンジン＋全ルール書き直し                                                                   | 極大       | ✗ 全喪失から再構築   | 単独では非推奨（下記条件付き） |
+
+**経路 A の具体像**（エンジン変更なしで今すぐ作れる）:
+
+1. **syntax タグの自動収集**: 全依存 plugin のルールに対し `rule.create(proxy)` で visitor キーを実測 → 「ルール × AST ノード種別」の表を自動生成（`gen-eslint-rules` の自然な拡張）。
+2. **重複候補レポート**: ノード集合の重なり＋ルール名の類似から重複候補を列挙 → `nodejs.mts` の手書き off リストの妥当性を機械チェック、新規重複の見落としを防止。
+3. **targets ラベル DB**: 初回は既存の手書き off リスト（これ自体が人手分類の蓄積資産）から逆生成し、以後は**新規ルールだけ**判定する差分運用。DOM API 名等のヒューリスティックで下書きを自動生成。
+4. **クエリ → flat config コンパイラ**: 既存の `defineConfig` / `defineKnownRules` 資産の上に載せる。利用者から見た提供物は今と同じ flat config。
+
+弱点: メタデータが自前 DB に留まり上流に還元されない／実測できるのは syntax 面まで。それでも**課題 1（追従コスト）と課題 2（重複管理）の大部分はこの層で解消できる**。
+
+**経路 C を選ぶ唯一の合理的な形**: ルール資産の規模感（ESLint core ~290 ＋ typescript-eslint ~130 ＋ 主要 plugin 群で 1000+。oxlint は 650 ルール移植に専業チームで数年、tsgolint は 59 ルールで大型 PoC）から、個人／小規模でのフル再実装は非現実的。**ただし §6 で見たとおり、TS7（tsgo）移行で type-aware ルールはエコシステム全体がどのみち書き直しを迫られる**。この「強制リセット」は、**新世代の rule API に manifest 義務化を最初から仕込める歴史的な窓**でもある。この窓に賭けるなら、作るべきは linter エンジンではなく **「rule manifest 仕様＋検証ツールチェーン」という共通規格**であり、それを oxlint（corsa）/ rslint / ESLint の各エンジンに採用提案する方が、再実装より遥かにレバレッジが高い。
+
+### 8.5 本ライブラリへの示唆
+
+- **短期**: 経路 A の (1)(2) は移行問題と独立に今すぐ着手でき、現行 ESLint 構成のメンテコストを直接下げる。§7 の「oxlintrc 生成器」「rslint 移行」とも**同じ資産（メタデータ registry ＋ config コンパイラ）で戦える** — どのエンジンに移行しても registry 層は生き残る。
+- **中期**: corsa-oxlint の plugin API と rslint の config 仕様が固まる前の今が、manifest 的な機構を上流に提案する好機（Biome domains という実証例を援用できる）。
+- **本ライブラリの将来形**は「typed flat config 集」から「**ルールメタデータ registry ＋ 任意エンジン向け config コンパイラ**」へ。これは §9 のリブランド論の具体的な中身になる。
+
+---
+
+## 9. 推奨移行戦略（段階的ハイブリッド）
 
 ### Phase 1 — oxlint 導入・共存（今すぐ着手可）
 
@@ -319,7 +456,7 @@ config/ルールライブラリの価値の中心は、CLI 速度だけでなく
 
 ---
 
-## 9. まとめ
+## 10. まとめ
 
 - **「完全上位互換の単一ツール」は 2026-07 現在まだ無い。** 唯一の関門は本ライブラリの **22 個の type-aware カスタムルール**。
 - **oxlint（Vite+）が最有力**。MIT で無償、ESLint プラグインをほぼ無改造で動かせ、syntactic カスタムルールも書け、速度は圧倒的。エディタ拡張も成熟（9.6万+ installs、LSP・保存時 fix・config 補完）。**唯一足りないのがカスタム type-aware ルール**で、これは公式ロードマップ上の WIP（`corsa-oxlint`）。
@@ -328,6 +465,7 @@ config/ルールライブラリの価値の中心は、CLI 速度だけでなく
 - 現実解は **oxlint 主軸 ＋ 当面 ESLint を型 lint の受け皿として併走**させて即座に大幅高速化し、**native-tsgo なカスタム type-aware（oxlint の corsa-oxlint / rslint）の実用化をトリガーに完全移行**するのが最善。DX 最優先で tsl 移植を狙う場合も、tsl 側の tsgo 対応が前提。
 - **flat config・bulk suppressions・エディタ負荷の観点（§7）**: bulk suppressions を持つのは現状 **ESLint のみ**（v10.1 で IDE 反映まで対応）で、厳格 type-aware 群を ESLint に残す判断を後押しする。**エディタが重い問題は、Phase 1 の oxlint 併用時点で解消可能**（syntactic 群を oxlint LSP に退避し、エディタ内 ESLint を type-aware 中心の軽い config に絞る。`oxc.configPath` でエディタ/CLI の config 分離も可能）。
 - **rslint** はカスタム type-aware を最初から狙い、**typescript-go ネイティブ**、かつ **ESLint v10 互換 flat config を TS（`defineConfig`）で書ける**点で、本ライブラリの提供形態（typed flat config）を最も保てる将来の受け皿。TS7 時代に本命化する可能性があり、oxlint と並行してウォッチ推奨。
+- **ルール分類の設計思想（§8）**: 「ルールがどのコード向けか」のラベル機構は **Biome domains が唯一の本格実装**（依存検出で自動有効化）で、「検査対象構文による自動分類・重複検出」は**どのツールも持たない**。理想形は「**ルールは manifest を持つデータ、config はメタデータへのクエリ**」で、用途別 preset の追従コスト・重複ルール管理・エディタ負荷分散（typeInfo による tier 自動振り分け）が構造的に解消される。現実的な着手順は **(A) ESLint 上のメタレイヤ（visitor introspection による syntax タグ自動収集＋ラベル DB ＋クエリ→config コンパイラ）を本ライブラリの進化形として構築** → (B) corsa-oxlint / rslint の API が固まる前に manifest 仕様を上流提案。フル再実装は単独では非現実的だが、**TS7 による type-aware ルール全書き直しの「強制リセット」は manifest 義務化を新世代規約に仕込める歴史的な窓**。
 
 ---
 
@@ -365,3 +503,8 @@ config/ルールライブラリの価値の中心は、CLI 速度だけでなく
 - oxlint LSP が configPath を無視するバグ報告: <https://github.com/oxc-project/oxc/issues/21311>
 - rslint Configuration（ESLint v10 互換 flat config・TS `defineConfig`）: <https://rslint.rs/config/>
 - Biome の suppressions ファイル要望（Discussion #8691）: <https://github.com/biomejs/biome/discussions/8691>
+- Biome Domains（用途ラベル＋依存検出による自動有効化）: <https://biomejs.dev/linter/domains/>
+- ESLint カスタムルールの `meta` 仕様: <https://eslint.org/docs/latest/extend/custom-rules>
+- typescript-eslint の extension rules（`extendsBaseRule`）: <https://typescript-eslint.io/rules/#extension-rules>
+- eslint-config-prettier（formatter 競合ルールの手動メンテリスト）: <https://github.com/prettier/eslint-config-prettier>
+- deno lint tags: <https://docs.deno.com/runtime/reference/cli/lint/>
