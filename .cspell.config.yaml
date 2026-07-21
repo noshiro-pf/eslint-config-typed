@@ -8,6 +8,9 @@ words:
   - blueprintjs
   - klass
   - noshiro
+  - oxc
+  - oxlint
+  - oxlintrc
   - pikachu
   - sindresorhus
   - testw
