@@ -11,6 +11,9 @@ words:
   - klass
   - misrefactored
   - noshiro
+  - oxc
+  - oxlint
+  - oxlintrc
   - pikachu
   - sindresorhus
   - testw
