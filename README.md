@@ -1,3 +1,11 @@
+> [!IMPORTANT]
+>
+> **This repository has moved to [noshiro-pf/mono](https://github.com/noshiro-pf/mono).**
+>
+> Development continues at [`libs/eslint-config-typed`](https://github.com/noshiro-pf/mono/tree/main/libs/eslint-config-typed).
+> The full commit history and every tag came along; releases and issues stay
+> readable here.
+
 # eslint-config-typed
 
 [![npm version](https://img.shields.io/npm/v/eslint-config-typed.svg)](https://www.npmjs.com/package/eslint-config-typed)
